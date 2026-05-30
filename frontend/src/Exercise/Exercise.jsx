@@ -2,6 +2,7 @@ import React from "react";
 import "./Exercise.css";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Button } from "@/components/ui/button";
 export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -18,19 +19,39 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete }) => {
       {...listeners}
       className="exercise"
     >
-      <ul>
-        <div>Name: {name}</div>
-        <div>Weight: {weight}</div>
-        <div>Sets: {sets}</div>
-        <div>Reps: {reps}</div>
-        <div>Notes:{notes}</div>
-      </ul>
-      <input
-        type="button"
-        value="Delete"
+      <div className="space-y-1">
+        <div className="font-semibold">{name}</div>
+        <div className="text-sm text-muted-foreground">Weight: {weight}</div>
+        <div className="text-sm text-muted-foreground">Sets: {sets}</div>
+        <div className="text-sm text-muted-foreground">Reps: {reps}</div>
+        {notes && (
+          <div className="text-sm text-muted-foreground">Notes: {notes}</div>
+        )}
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {}}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        Reps
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {}}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        Edit
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
         onClick={() => onDelete(id)}
         onPointerDown={(e) => e.stopPropagation()}
-      />
+      >
+        Delete
+      </Button>
     </div>
   );
 };

@@ -10,6 +10,9 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./Components/Column/Column";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 const App = () => {
   const [session, setNewSession] = useState([]);
@@ -114,17 +117,23 @@ const App = () => {
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-2xl p-6 space-y-6">
       {showExercise()}
-      <h1>Save an exercise!</h1>
-      <form onSubmit={addExercise}>
-        <div>
-          Workout Name:{" "}
-          <input value={newName} onChange={handleNameChange} required />
+      <h1 className="text-2xl font-semibold">Save an exercise!</h1>
+      <form onSubmit={addExercise} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Workout Name</Label>
+          <Input
+            id="name"
+            value={newName}
+            onChange={handleNameChange}
+            required
+          />
         </div>
-        <div>
-          Weight:{" "}
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="weight">Weight</Label>
+          <Input
+            id="weight"
             type="number"
             min="0"
             step="0.5"
@@ -132,9 +141,10 @@ const App = () => {
             onChange={handleWeightChange}
           />
         </div>
-        <div>
-          Set Amount:{" "}
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="sets">Set Amount</Label>
+          <Input
+            id="sets"
             type="number"
             min="1"
             value={newSet}
@@ -142,9 +152,10 @@ const App = () => {
             required
           />
         </div>
-        <div>
-          Target Rep Amount:{" "}
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="reps">Target Rep Amount</Label>
+          <Input
+            id="reps"
             type="number"
             min="1"
             value={newRep}
@@ -152,15 +163,12 @@ const App = () => {
             required
           />
         </div>
-        <div>
-          Notes: <input value={newNote} onChange={handleNoteChange} />
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Input id="notes" value={newNote} onChange={handleNoteChange} />
         </div>
-        <div>
-          <button type="submit">Save Workout</button>
-        </div>
+        <Button type="submit">Save Workout</Button>
       </form>
-      <div></div>
-      <p></p>
     </div>
   );
 };
