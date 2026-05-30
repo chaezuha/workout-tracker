@@ -42,6 +42,14 @@ const App = () => {
     setNewNotes("");
   };
 
+  const deleteExercise = (id) => {
+    const target = exercise.find((e) => e.id === id);
+
+    if (window.confirm(`Delete ${target.name}?`)) {
+      setNewExercise(exercise.filter((e) => e.id !== id));
+    }
+  };
+
   const handleNameChange = (event) => {
     setNewName(event.target.value);
   };
@@ -99,7 +107,7 @@ const App = () => {
           onDragEnd={handleDragEnd}
           collisionDetection={closestCorners}
         >
-          <Column exercises={exercise} />
+          <Column exercises={exercise} onDelete={deleteExercise} />
         </DndContext>
       </ul>
     );
