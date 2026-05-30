@@ -1,4 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+  DndContext,
+  closestCorners,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { Column } from "./Components/Column/Column";
 
 const App = () => {
   const [session, setNewSession] = useState([]);
@@ -8,12 +19,14 @@ const App = () => {
   const [newSet, setNewSet] = useState("");
   const [newRep, setNewRep] = useState("");
   const [newNote, setNewNotes] = useState("");
-  const [id, setId] = useState(0);
+  const idRef = useRef(1);
+  const newId = () => idRef.current++;
 
   const addExercise = (event) => {
     event.preventDefault();
 
     const exerciseObject = {
+      id: newId(),
       name: newName,
       weight: newWeight,
       sets: newSet,
@@ -49,6 +62,31 @@ const App = () => {
     setNewNotes(event.target.value);
   };
 
+  const getExercisePos = (id) =>
+    exercise.findIndex((exercise) => exercise.id === id);
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id === over.id) {
+      return;
+    }
+
+    setNewExercise((exercise) => {
+      const originalPos = getExercisePos(active.id);
+      const newPos = getExercisePos(over.id);
+
+      return arrayMove(exercise, originalPos, newPos);
+    });
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
   const showExercise = () => {
     if (exercise.length === 0) {
       return <h1>No exercises found</h1>;
@@ -56,17 +94,13 @@ const App = () => {
     return (
       <ul>
         <h1>Today's workout</h1>
-        {exercise.map((w) => (
-          <li key={w.name}>
-            <div>
-              <div>Workout: {w.name}</div>
-              <div>Weight: {w.weight}</div>
-              <div>Sets: {w.sets}</div>
-              <div>Reps: {w.reps}</div>
-              {w.notes.length !== 0 && <div>Notes: {w.notes}</div>}
-            </div>
-          </li>
-        ))}
+        <DndContext
+          sensors={sensors}
+          onDragEnd={handleDragEnd}
+          collisionDetection={closestCorners}
+        >
+          <Column exercises={exercise} />
+        </DndContext>
       </ul>
     );
   };
