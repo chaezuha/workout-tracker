@@ -2,17 +2,18 @@ import { useState, useEffect } from "react";
 
 const App = () => {
   const [session, setNewSession] = useState([]);
-  const [workout, setNewWorkout] = useState([]);
+  const [exercise, setNewExercise] = useState([]);
   const [newName, setNewName] = useState("");
   const [newWeight, setNewWeight] = useState("");
   const [newSet, setNewSet] = useState("");
   const [newRep, setNewRep] = useState("");
   const [newNote, setNewNotes] = useState("");
+  const [id, setId] = useState(0);
 
-  const addWorkout = (event) => {
+  const addExercise = (event) => {
     event.preventDefault();
 
-    const workoutObject = {
+    const exerciseObject = {
       name: newName,
       weight: newWeight,
       sets: newSet,
@@ -20,7 +21,7 @@ const App = () => {
       notes: newNote,
     };
 
-    setNewWorkout(workout.concat(workoutObject));
+    setNewExercise(exercise.concat(exerciseObject));
     setNewName("");
     setNewWeight("");
     setNewSet("");
@@ -48,31 +49,66 @@ const App = () => {
     setNewNotes(event.target.value);
   };
 
-  return (
-    <div>
-      <h1>Save today's workout</h1>
+  const showExercise = () => {
+    if (exercise.length === 0) {
+      return <h1>No exercises found</h1>;
+    }
+    return (
       <ul>
-        {workout.map((w) => (
-          <ul key={w.name}>
-            <div>Workout: {w.name}</div>
-            <div>Weight: {w.weight}</div>
-            <div>Sets: {w.sets}</div>
-            <div>Notes: {w.notes}</div>
-          </ul>
+        <h1>Today's workout</h1>
+        {exercise.map((w) => (
+          <li key={w.name}>
+            <div>
+              <div>Workout: {w.name}</div>
+              <div>Weight: {w.weight}</div>
+              <div>Sets: {w.sets}</div>
+              <div>Reps: {w.reps}</div>
+              {w.notes.length !== 0 && <div>Notes: {w.notes}</div>}
+            </div>
+          </li>
         ))}
       </ul>
-      <form onSubmit={addWorkout}>
+    );
+  };
+
+  return (
+    <div>
+      {showExercise()}
+      <h1>Save an exercise!</h1>
+      <form onSubmit={addExercise}>
         <div>
-          Workout Name: <input value={newName} onChange={handleNameChange} />
+          Workout Name:{" "}
+          <input value={newName} onChange={handleNameChange} required />
         </div>
         <div>
-          Weight: <input value={newWeight} onChange={handleWeightChange} />
+          Weight:{" "}
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            value={newWeight}
+            onChange={handleWeightChange}
+          />
         </div>
         <div>
-          Set Amount: <input value={newSet} onChange={handleSetChange} />
+          Set Amount:{" "}
+          <input
+            type="number"
+            min="1"
+            value={newSet}
+            onChange={handleSetChange}
+            required
+          />
         </div>
         <div>
-          Target Rep Amount: <input value={newRep} onChange={handleRepChange} />
+          Target Rep Amount:{" "}
+          <input
+            type="number"
+            min="1"
+            value={newRep}
+            onChange={handleRepChange}
+            required
+          />
         </div>
         <div>
           Notes: <input value={newNote} onChange={handleNoteChange} />
