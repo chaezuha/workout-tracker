@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Exercise } from "../../Exercise/Exercise";
-export const Column = ({ exercises, onDelete }) => {
+export const Column = ({ exercises, onDelete, onEdit }) => {
   return (
     <div className="column">
       <SortableContext
@@ -22,6 +22,7 @@ export const Column = ({ exercises, onDelete }) => {
             notes={exercise.notes}
             key={exercise.id}
             onDelete={onDelete}
+            onEdit={onEdit}
           />
         ))}
       </SortableContext>

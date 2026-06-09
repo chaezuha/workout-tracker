@@ -45,6 +45,12 @@ const App = () => {
     setNewNotes("");
   };
 
+  const editExercise = (id, data) => {
+    const target = exercise.find((e) => e.id === id);
+    
+    setNewExercise(exercise.map((e) => e.id === id ? {...e, ...data} : e));
+  }
+
   const deleteExercise = (id) => {
     const target = exercise.find((e) => e.id === id);
 
@@ -110,7 +116,7 @@ const App = () => {
           onDragEnd={handleDragEnd}
           collisionDetection={closestCorners}
         >
-          <Column exercises={exercise} onDelete={deleteExercise} />
+          <Column exercises={exercise} onDelete={deleteExercise} onEdit={editExercise} />
         </DndContext>
       </ul>
     );

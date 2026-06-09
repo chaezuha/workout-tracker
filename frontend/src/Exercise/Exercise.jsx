@@ -17,7 +17,7 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete }) => {
+export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete, onEdit }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
 
@@ -51,11 +51,15 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete }) => {
         Reps
       </Button>
       <Dialog>
-        <form>
           <DialogTrigger asChild>
             <Button variant="outline">Edit</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            onEdit(id, data);
+          }}>
             <DialogHeader>
               <DialogTitle>Edit Mode</DialogTitle>
               <DialogDescription>
@@ -73,25 +77,25 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete }) => {
               </Field>
               <Field>
                 <Label htmlFor="set-1">Sets</Label>
-                <Input id="weight-1" name="sets" defaultValue={sets} />
+                <Input id="set-1" name="sets" defaultValue={sets} />
               </Field>
               <Field>
                 <Label htmlFor="rep-1">Reps</Label>
-                <Input id="weight-1" name="reps" defaultValue={reps} />
+                <Input id="rep-1" name="reps" defaultValue={reps} />
               </Field>
               <Field>
-                <Label htmlFor="weight-1">Notes</Label>
-                <Input id="note-1" name="notes" defaultValue={notes} />
+                <Label htmlFor="notes-1">Notes</Label>
+                <Input id="notes-1" name="notes" defaultValue={notes} />
               </Field>
             </FieldGroup>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Save changes</Button>
+              <Button type="submit"> Save changes</Button>
             </DialogFooter>
+          </form>
           </DialogContent>
-        </form>
       </Dialog>
       <Button
         variant="destructive"
