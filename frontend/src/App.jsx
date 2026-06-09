@@ -35,6 +35,7 @@ const App = () => {
       sets: newSet,
       reps: newRep,
       notes: newNote,
+      completedReps: []
     };
 
     setNewExercise(exercise.concat(exerciseObject));

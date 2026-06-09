@@ -20,6 +20,7 @@ export const Column = ({ exercises, onDelete, onEdit }) => {
             sets={exercise.sets}
             reps={exercise.reps}
             notes={exercise.notes}
+            completedReps={exercise.completedReps}
             key={exercise.id}
             onDelete={onDelete}
             onEdit={onEdit}

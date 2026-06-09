@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./Exercise.css";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -17,7 +17,9 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete, onEdit }) => {
+export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, onDelete, onEdit }) => {
+  const [inputReps, setNewReps] = useState(completedReps ?? []);
+
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
 
@@ -25,6 +27,33 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete, onEdit
     transition,
     transform: CSS.Transform.toString(transform),
   };
+
+  function renderReps() {
+    const inputs = [];
+    const setCount = Number(sets);
+
+    for (let i = 0; i < setCount; i++) {
+      inputs.push(
+        <Field key={i}>
+          <Label>Set {i + 1}</Label>
+          <Input
+            type="number"
+            placeholder="Input reps"
+            value={inputReps[i] || ""}
+            onChange={(e) => handleRepChange(i, e.target.value)}
+          />
+        </Field>
+      )
+    }
+    return inputs;
+  }
+
+  function handleRepChange(i, newValue) {
+    const next = inputReps.slice();
+    next[i] = newValue;
+    setNewReps(next);
+  }
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} className="exercise">
       <div
@@ -42,14 +71,33 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, onDelete, onEdit
           <div className="text-sm text-muted-foreground">Notes: {notes}</div>
         )}
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => {}}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        Reps
-      </Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline">Reps</Button>
+        </DialogTrigger>
+        <DialogContent className = "sm:max-w-sm">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            onEdit(id, {completedReps: inputReps});
+          }}>
+            <DialogHeader>
+              <DialogTitle>Edit Reps</DialogTitle>
+              <DialogDescription>
+                Count the amount of reps per set
+              </DialogDescription>
+            </DialogHeader>
+            <FieldGroup>
+              {renderReps()}
+            </FieldGroup>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Save Reps</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">Edit</Button>
