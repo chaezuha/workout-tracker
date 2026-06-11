@@ -24,8 +24,11 @@ const App = () => {
   const [reps, setReps] = useState("");
   const [notes, setNotes] = useState("");
   const [desiredWeight, setDesiredWeight] = useState("");
-  const [barbellWeight, setBarbellWeight] = useState("");
+  const [barbellWeight, setBarbellWeight] = useState("45");
   const [calculatedPlates, setCalculatedPlates] = useState([]);
+  const [plateCounts, setPlateCounts] = useState(Array(weights.length).fill(""));
+  const [plateBarbellWeight, setPlateBarbellWeight] = useState("45");
+  const [calculatedWeight, setCalculatedWeight] = useState(0);
 
 
   const idRef = useRef(1);
@@ -90,6 +93,14 @@ const App = () => {
 
   const handleBarbellWeightChange = (event) => {
     setBarbellWeight(event.target.value);
+  }
+
+  const handlePlateBarbellWeightChange = (event) => {
+    setPlateBarbellWeight(event.target.value);
+  }
+
+  const handlePlateCountChange = (i) => (event) => {
+    setPlateCounts(plateCounts.map((c, j) => j === i ? event.target.value : c));
   }
 
 
@@ -168,42 +179,58 @@ const App = () => {
     setCalculatedPlates(results);
   }
 
-  const weightCaclulator = (event) => {
+  const calculateWeight = (event) => {
+    event.preventDefault();
 
+    let temp_weight = Number(plateBarbellWeight) || 0;
+    for (let i = 0; i < plateCounts.length; i++) {
+      temp_weight += (Number(plateCounts[i]) || 0) * weights[i];
+    }
+
+    setCalculatedWeight(temp_weight)
+  }
+
+  const showCalculatedWeight = () => {
+    if (calculatedWeight === 0) {
+      return <h1>Please input some values</h1>
+    }
+    return <p>{calculatedWeight} lb</p>
   }
 
   return (
     <>
     <div className="mx-auto max-w-2xl p-6 space-y-6">
-        {showCalculatedPlates()}
-        <h1 className="text-2xl font-semibold">Plate Calculator!</h1>
-        <form onSubmit={calculatePlates} className="space-y-4">
+        {showCalculatedWeight()}
+        <h1 className="text-2xl font-semibold">Plate to Weights!</h1>
+        <form onSubmit={calculateWeight} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="Desired Weight">Desired Weight</Label>
+            <Label htmlFor="plate-barbell-weight">Barbell Weight</Label>
             <Input
-              id = "Desired Weight"
-              value={desiredWeight}
-              onChange={handleDesiredWeightChange}
-              required
-            >
-            </Input>
+              id="plate-barbell-weight"
+              type="number"
+              min="0"
+              value={plateBarbellWeight}
+              onChange={handlePlateBarbellWeightChange}
+            />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="Desired Weight">Barell Weight</Label>
-            <Input
-              id = "Barbell Weight"
-              value={barbellWeight}
-              onChange={handleBarbellWeightChange}
-              required
-            >
-            </Input>
-          </div>
-          <Button type="submit">Calculate Weights</Button>
+          {weights.map((w, i) => (
+            <div key={w} className="space-y-2">
+              <Label htmlFor={`plate-${w}`}>{w} lb plates</Label>
+              <Input
+                id={`plate-${w}`}
+                type="number"
+                min="0"
+                value={plateCounts[i]}
+                onChange={handlePlateCountChange(i)}
+              />
+            </div>
+          ))}
+          <Button type="submit">Calculate Weight</Button>
         </form>
     </div>
     <div className="mx-auto max-w-2xl p-6 space-y-6">
         {showCalculatedPlates()}
-        <h1 className="text-2xl font-semibold">Plate Calculator!</h1>
+        <h1 className="text-2xl font-semibold">Weight to Plates!</h1>
         <form onSubmit={calculatePlates} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="Desired Weight">Desired Weight</Label>
