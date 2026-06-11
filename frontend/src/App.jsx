@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   DndContext,
   closestCorners,
@@ -17,16 +17,15 @@ import { Button } from "@/components/ui/button";
 const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
 
 const App = () => {
-  const [session, setNewSession] = useState([]);
-  const [exercise, setNewExercise] = useState([]);
-  const [newName, setNewName] = useState("");
-  const [newWeight, setNewWeight] = useState("");
-  const [newSet, setNewSet] = useState("");
-  const [newRep, setNewRep] = useState("");
-  const [newNote, setNewNotes] = useState("");
-  const [newDesiredWeight, setNewDesiredWeight] = useState("");
-  const [newBarbellWeight, setNewBarbellWeight] = useState("");
-  const [calculatedWeights, setNewCalculatedWeights] = useState([]);
+  const [exercise, setExercise] = useState([]);
+  const [name, setName] = useState("");
+  const [weight, setWeight] = useState("");
+  const [sets, setSets] = useState("");
+  const [reps, setReps] = useState("");
+  const [notes, setNotes] = useState("");
+  const [desiredWeight, setDesiredWeight] = useState("");
+  const [barbellWeight, setBarbellWeight] = useState("");
+  const [calculatedWeights, setCalculatedWeights] = useState([]);
 
   const idRef = useRef(1);
   const newId = () => idRef.current++;
@@ -36,62 +35,60 @@ const App = () => {
 
     const exerciseObject = {
       id: newId(),
-      name: newName,
-      weight: newWeight,
-      sets: newSet,
-      reps: newRep,
-      notes: newNote,
+      name,
+      weight,
+      sets,
+      reps,
+      notes,
       completedReps: []
     };
 
-    setNewExercise(exercise.concat(exerciseObject));
-    setNewName("");
-    setNewWeight("");
-    setNewSet("");
-    setNewRep("");
-    setNewNotes("");
+    setExercise(exercise.concat(exerciseObject));
+    setName("");
+    setWeight("");
+    setSets("");
+    setReps("");
+    setNotes("");
   };
 
   const editExercise = (id, data) => {
-    const target = exercise.find((e) => e.id === id);
-    
-    setNewExercise(exercise.map((e) => e.id === id ? {...e, ...data} : e));
+    setExercise(exercise.map((e) => e.id === id ? {...e, ...data} : e));
   }
 
   const deleteExercise = (id) => {
     const target = exercise.find((e) => e.id === id);
 
     if (window.confirm(`Delete ${target.name}?`)) {
-      setNewExercise(exercise.filter((e) => e.id !== id));
+      setExercise(exercise.filter((e) => e.id !== id));
     }
   };
 
   const handleNameChange = (event) => {
-    setNewName(event.target.value);
+    setName(event.target.value);
   };
 
   const handleWeightChange = (event) => {
-    setNewWeight(event.target.value);
+    setWeight(event.target.value);
   };
 
   const handleSetChange = (event) => {
-    setNewSet(event.target.value);
+    setSets(event.target.value);
   };
 
   const handleRepChange = (event) => {
-    setNewRep(event.target.value);
+    setReps(event.target.value);
   };
 
   const handleNoteChange = (event) => {
-    setNewNotes(event.target.value);
+    setNotes(event.target.value);
   };
 
   const handleDesiredWeightChange = (event) => {
-    setNewDesiredWeight(event.target.value);
+    setDesiredWeight(event.target.value);
   }
 
   const handleBarbellWeightChange = (event) => {
-    setNewBarbellWeight(event.target.value);
+    setBarbellWeight(event.target.value);
   }
 
 
@@ -105,7 +102,7 @@ const App = () => {
       return;
     }
 
-    setNewExercise((exercise) => {
+    setExercise((exercise) => {
       const originalPos = getExercisePos(active.id);
       const newPos = getExercisePos(over.id);
 
@@ -151,25 +148,23 @@ const App = () => {
   const calculatePlates = (event) => {
     event.preventDefault();
 
-    let desiredWeight = newDesiredWeight;
-    let barWeight = newBarbellWeight;
-    desiredWeight -= barWeight;
+    let remaining = desiredWeight - barbellWeight;
     const results = [0, 0, 0, 0, 0, 0, 0, 0];
 
     let i = 0;
-    while (desiredWeight != 0 && i < weights.length) {
-      let tmp_val = Math.floor(desiredWeight / weights[i]);
+    while (remaining != 0 && i < weights.length) {
+      let tmp_val = Math.floor(remaining / weights[i]);
       if (tmp_val >= 2) {
         if (tmp_val % 2 !== 0) {
           tmp_val -= 1;
         }
         results[i] = tmp_val;
-        desiredWeight -= results[i] * weights[i];
+        remaining -= results[i] * weights[i];
       }
       i += 1;
     }
 
-    setNewCalculatedWeights(results);
+    setCalculatedWeights(results);
   }
 
   return (
@@ -182,7 +177,7 @@ const App = () => {
             <Label htmlFor="Desired Weight">Desired Weight</Label>
             <Input
               id = "Desired Weight"
-              value={newDesiredWeight}
+              value={desiredWeight}
               onChange={handleDesiredWeightChange}
               required
             >
@@ -192,7 +187,7 @@ const App = () => {
             <Label htmlFor="Desired Weight">Barell Weight</Label>
             <Input
               id = "Barbell Weight"
-              value={newBarbellWeight}
+              value={barbellWeight}
               onChange={handleBarbellWeightChange}
               required
             >
@@ -210,7 +205,7 @@ const App = () => {
           <Label htmlFor="name">Workout Name</Label>
           <Input
             id="name"
-            value={newName}
+            value={name}
             onChange={handleNameChange}
             required
           />
@@ -222,7 +217,7 @@ const App = () => {
             type="number"
             min="0"
             step="0.5"
-            value={newWeight}
+            value={weight}
             onChange={handleWeightChange}
           />
         </div>
@@ -232,7 +227,7 @@ const App = () => {
             id="sets"
             type="number"
             min="1"
-            value={newSet}
+            value={sets}
             onChange={handleSetChange}
             required
           />
@@ -243,14 +238,14 @@ const App = () => {
             id="reps"
             type="number"
             min="1"
-            value={newRep}
+            value={reps}
             onChange={handleRepChange}
             required
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="notes">Notes</Label>
-          <Input id="notes" value={newNote} onChange={handleNoteChange} />
+          <Input id="notes" value={notes} onChange={handleNoteChange} />
         </div>
         <Button type="submit">Save Workout</Button>
       </form>
