@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
+
 const App = () => {
   const [session, setNewSession] = useState([]);
   const [exercise, setNewExercise] = useState([]);
@@ -22,6 +24,10 @@ const App = () => {
   const [newSet, setNewSet] = useState("");
   const [newRep, setNewRep] = useState("");
   const [newNote, setNewNotes] = useState("");
+  const [newDesiredWeight, setNewDesiredWeight] = useState("");
+  const [newBarbellWeight, setNewBarbellWeight] = useState("");
+  const [calculatedWeights, setNewCalculatedWeights] = useState([]);
+
   const idRef = useRef(1);
   const newId = () => idRef.current++;
 
@@ -80,6 +86,16 @@ const App = () => {
     setNewNotes(event.target.value);
   };
 
+  const handleDesiredWeightChange = (event) => {
+    setNewDesiredWeight(event.target.value);
+  }
+
+  const handleBarbellWeightChange = (event) => {
+    setNewBarbellWeight(event.target.value);
+  }
+
+
+
   const getExercisePos = (id) =>
     exercise.findIndex((exercise) => exercise.id === id);
 
@@ -123,7 +139,69 @@ const App = () => {
     );
   };
 
+  const showCalculatedPlates = () => {
+    if (calculatedWeights.length === 0) {
+      return <h1>Please input some values</h1>
+    }
+    return calculatedWeights.map((count, i) =>
+      count !== 0 && <p key={i}>{count} × {weights[i]} lb</p>
+    )
+  }
+
+  const calculatePlates = (event) => {
+    event.preventDefault();
+
+    let desiredWeight = newDesiredWeight;
+    let barWeight = newBarbellWeight;
+    desiredWeight -= barWeight;
+    const results = [0, 0, 0, 0, 0, 0, 0, 0];
+
+    let i = 0;
+    while (desiredWeight != 0 && i < weights.length) {
+      let tmp_val = Math.floor(desiredWeight / weights[i]);
+      if (tmp_val >= 2) {
+        if (tmp_val % 2 !== 0) {
+          tmp_val -= 1;
+        }
+        results[i] = tmp_val;
+        desiredWeight -= results[i] * weights[i];
+      }
+      i += 1;
+    }
+
+    setNewCalculatedWeights(results);
+  }
+
   return (
+    <>
+    <div className="mx-auto max-w-2xl p-6 space-y-6">
+        {showCalculatedPlates()}
+        <h1 className="text-2xl font-semibold">Plate Calculator!</h1>
+        <form onSubmit={calculatePlates} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="Desired Weight">Desired Weight</Label>
+            <Input
+              id = "Desired Weight"
+              value={newDesiredWeight}
+              onChange={handleDesiredWeightChange}
+              required
+            >
+            </Input>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="Desired Weight">Barell Weight</Label>
+            <Input
+              id = "Barbell Weight"
+              value={newBarbellWeight}
+              onChange={handleBarbellWeightChange}
+              required
+            >
+            </Input>
+          </div>
+          <Button type="submit">Calculate Weights</Button>
+        </form>
+    </div>
+      
     <div className="mx-auto max-w-2xl p-6 space-y-6">
       {showExercise()}
       <h1 className="text-2xl font-semibold">Save an exercise!</h1>
@@ -177,6 +255,7 @@ const App = () => {
         <Button type="submit">Save Workout</Button>
       </form>
     </div>
+    </>
   );
 };
 
