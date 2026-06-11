@@ -25,7 +25,8 @@ const App = () => {
   const [notes, setNotes] = useState("");
   const [desiredWeight, setDesiredWeight] = useState("");
   const [barbellWeight, setBarbellWeight] = useState("");
-  const [calculatedWeights, setCalculatedWeights] = useState([]);
+  const [calculatedPlates, setCalculatedPlates] = useState([]);
+
 
   const idRef = useRef(1);
   const newId = () => idRef.current++;
@@ -137,10 +138,10 @@ const App = () => {
   };
 
   const showCalculatedPlates = () => {
-    if (calculatedWeights.length === 0) {
+    if (calculatedPlates.length === 0) {
       return <h1>Please input some values</h1>
     }
-    return calculatedWeights.map((count, i) =>
+    return calculatedPlates.map((count, i) =>
       count !== 0 && <p key={i}>{count} × {weights[i]} lb</p>
     )
   }
@@ -164,7 +165,11 @@ const App = () => {
       i += 1;
     }
 
-    setCalculatedWeights(results);
+    setCalculatedPlates(results);
+  }
+
+  const weightCaclulator = (event) => {
+
   }
 
   return (
@@ -196,6 +201,34 @@ const App = () => {
           <Button type="submit">Calculate Weights</Button>
         </form>
     </div>
+    <div className="mx-auto max-w-2xl p-6 space-y-6">
+        {showCalculatedPlates()}
+        <h1 className="text-2xl font-semibold">Plate Calculator!</h1>
+        <form onSubmit={calculatePlates} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="Desired Weight">Desired Weight</Label>
+            <Input
+              id = "Desired Weight"
+              value={desiredWeight}
+              onChange={handleDesiredWeightChange}
+              required
+            >
+            </Input>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="Desired Weight">Barell Weight</Label>
+            <Input
+              id = "Barbell Weight"
+              value={barbellWeight}
+              onChange={handleBarbellWeightChange}
+              required
+            >
+            </Input>
+          </div>
+          <Button type="submit">Calculate Weights</Button>
+        </form>
+    </div>
+
       
     <div className="mx-auto max-w-2xl p-6 space-y-6">
       {showExercise()}
