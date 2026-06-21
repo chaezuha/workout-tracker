@@ -11,6 +11,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./components/Column/Column";
 import { DateNav } from "./components/DateNav/DateNav";
+import { WorkoutTimers } from "./components/WorkoutTimers/WorkoutTimers";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -280,6 +281,7 @@ const App = () => {
       
     <div className="mx-auto max-w-2xl p-6 space-y-6">
       <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
+      <WorkoutTimers />
       {showExercise()}
       <h1 className="text-2xl font-semibold">Save an exercise!</h1>
       <form onSubmit={addExercise} className="space-y-4">
