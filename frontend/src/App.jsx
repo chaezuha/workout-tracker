@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCorners,
@@ -13,11 +13,15 @@ import { Column } from "./components/Column/Column";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { toDateKey } from "@/lib/dates";
+import { getWorkoutsForDate, saveWorkoutsForDate } from "@/services/workouts";
 
 const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
 
 const App = () => {
   const [exercise, setExercise] = useState([]);
+  const [selectedDate] = useState(() => new Date());
+  const dateKey = toDateKey(selectedDate);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState("");
   const [sets, setSets] = useState("");
@@ -31,14 +35,30 @@ const App = () => {
   const [calculatedWeight, setCalculatedWeight] = useState(0);
 
 
-  const idRef = useRef(1);
-  const newId = () => idRef.current++;
+  const loadedDateRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getWorkoutsForDate(dateKey).then((items) => {
+      if (cancelled) return;
+      setExercise(items);
+      loadedDateRef.current = dateKey;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateKey]);
+
+  useEffect(() => {
+    if (loadedDateRef.current !== dateKey) return;
+    saveWorkoutsForDate(dateKey, exercise);
+  }, [exercise, dateKey]);
 
   const addExercise = (event) => {
     event.preventDefault();
 
     const exerciseObject = {
-      id: newId(),
+      id: crypto.randomUUID(),
       name,
       weight,
       sets,
