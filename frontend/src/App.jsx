@@ -10,17 +10,18 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./components/Column/Column";
+import { DateNav } from "./components/DateNav/DateNav";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { toDateKey } from "@/lib/dates";
+import { toDateKey, formatFriendly } from "@/lib/dates";
 import { getWorkoutsForDate, saveWorkoutsForDate } from "@/services/workouts";
 
 const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
 
 const App = () => {
   const [exercise, setExercise] = useState([]);
-  const [selectedDate] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const dateKey = toDateKey(selectedDate);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState("");
@@ -152,11 +153,11 @@ const App = () => {
 
   const showExercise = () => {
     if (exercise.length === 0) {
-      return <h1>No exercises found</h1>;
+      return <h1>No exercises for {formatFriendly(selectedDate)}</h1>;
     }
     return (
       <ul>
-        <h1>Today's workout</h1>
+        <h1>{formatFriendly(selectedDate)}'s workout</h1>
         <DndContext
           sensors={sensors}
           onDragEnd={handleDragEnd}
@@ -278,6 +279,7 @@ const App = () => {
 
       
     <div className="mx-auto max-w-2xl p-6 space-y-6">
+      <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
       {showExercise()}
       <h1 className="text-2xl font-semibold">Save an exercise!</h1>
       <form onSubmit={addExercise} className="space-y-4">
