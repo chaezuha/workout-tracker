@@ -4,10 +4,19 @@ import {
   showNotification,
   requestNotificationPermission,
 } from "@/lib/notify";
+import { getRestTimer, saveRestTimer, clearRestTimer } from "@/services/timer";
 
 export function useRestTimer() {
-  const [endsAt, setEndsAt] = useState(null);
-  const [remaining, setRemaining] = useState(0);
+  const [endsAt, setEndsAt] = useState(() => {
+    const saved = getRestTimer()?.endsAt ?? null;
+    return saved && saved > Date.now() ? saved : null;
+  });
+  const [remaining, setRemaining] = useState(() => {
+    const saved = getRestTimer()?.endsAt ?? null;
+    return saved && saved > Date.now()
+      ? Math.ceil((saved - Date.now()) / 1000)
+      : 0;
+  });
   const intervalRef = useRef(null);
 
   const clear = useCallback(() => {
@@ -20,12 +29,15 @@ export function useRestTimer() {
   const start = useCallback((seconds) => {
     if (!seconds || seconds <= 0) return;
     requestNotificationPermission();
-    setEndsAt(Date.now() + seconds * 1000);
+    const end = Date.now() + seconds * 1000;
+    saveRestTimer(end);
+    setEndsAt(end);
     setRemaining(seconds);
   }, []);
 
   const cancel = useCallback(() => {
     clear();
+    clearRestTimer();
     setEndsAt(null);
     setRemaining(0);
   }, [clear]);
@@ -37,6 +49,7 @@ export function useRestTimer() {
       const left = Math.ceil((endsAt - Date.now()) / 1000);
       if (left <= 0) {
         clear();
+        clearRestTimer();
         setRemaining(0);
         setEndsAt(null);
         playBeep();

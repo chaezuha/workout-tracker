@@ -1,33 +1,62 @@
-const STORAGE_KEY = "workouts";
+import { supabase } from "@/lib/supabase";
 
-function readAll() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeAll(all) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+function rowToExercise(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    weight: row.weight ?? "",
+    sets: row.sets,
+    reps: row.reps,
+    notes: row.notes ?? "",
+    completedReps: row.completed_reps ?? [],
+  };
 }
 
 export async function getWorkoutsForDate(dateKey) {
-  const all = readAll();
-  return all[dateKey] ?? [];
+  const { data, error } = await supabase
+    .from("exercises")
+    .select("*")
+    .eq("date", dateKey)
+    .order("position", { ascending: true });
+  if (error) throw error;
+  return data.map(rowToExercise);
 }
 
 export async function saveWorkoutsForDate(dateKey, exercises) {
-  const all = readAll();
-  if (!exercises || exercises.length === 0) {
-    delete all[dateKey];
-  } else {
-    all[dateKey] = exercises;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const rows = (exercises ?? []).map((e, i) => ({
+    id: e.id,
+    user_id: user.id,
+    date: dateKey,
+    name: e.name,
+    weight: e.weight === "" || e.weight == null ? null : Number(e.weight),
+    sets: Number(e.sets),
+    reps: Number(e.reps),
+    notes: e.notes ?? "",
+    completed_reps: e.completedReps ?? [],
+    position: i,
+  }));
+
+  if (rows.length) {
+    const { error } = await supabase.from("exercises").upsert(rows);
+    if (error) throw error;
   }
-  writeAll(all);
+
+  const keepIds = (exercises ?? []).map((e) => e.id);
+  let del = supabase.from("exercises").delete().eq("date", dateKey);
+  if (keepIds.length) {
+    del = del.not("id", "in", `(${keepIds.join(",")})`);
+  }
+  const { error: delErr } = await del;
+  if (delErr) throw delErr;
 }
 
 export async function getDatesWithWorkouts() {
-  return Object.keys(readAll());
+  const { data, error } = await supabase.from("exercises").select("date");
+  if (error) throw error;
+  return [...new Set(data.map((r) => r.date))];
 }

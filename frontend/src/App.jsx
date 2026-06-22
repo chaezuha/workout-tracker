@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toDateKey, formatFriendly } from "@/lib/dates";
 import { getWorkoutsForDate, saveWorkoutsForDate } from "@/services/workouts";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthForm } from "@/components/Auth/AuthForm";
 
 const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
 
@@ -37,9 +39,12 @@ const App = () => {
   const [calculatedWeight, setCalculatedWeight] = useState(0);
 
 
+  const { user, loading, signOut } = useAuth();
+
   const loadedDateRef = useRef(null);
 
   useEffect(() => {
+    if (!user) return;
     let cancelled = false;
     getWorkoutsForDate(dateKey).then((items) => {
       if (cancelled) return;
@@ -49,12 +54,13 @@ const App = () => {
     return () => {
       cancelled = true;
     };
-  }, [dateKey]);
+  }, [dateKey, user]);
 
   useEffect(() => {
+    if (!user) return;
     if (loadedDateRef.current !== dateKey) return;
     saveWorkoutsForDate(dateKey, exercise);
-  }, [exercise, dateKey]);
+  }, [exercise, dateKey, user]);
 
   const addExercise = (event) => {
     event.preventDefault();
@@ -219,8 +225,22 @@ const App = () => {
     return <p>{calculatedWeight} lb</p>
   }
 
+  if (loading) {
+    return null;
+  }
+
+  if (!user) {
+    return <AuthForm />;
+  }
+
   return (
     <>
+    <div className="mx-auto max-w-2xl p-6 flex items-center justify-between">
+      <span className="text-sm text-muted-foreground">{user.email}</span>
+      <Button type="button" variant="outline" onClick={signOut}>
+        Sign out
+      </Button>
+    </div>
     <div className="mx-auto max-w-2xl p-6 space-y-6">
         {showCalculatedWeight()}
         <h1 className="text-2xl font-semibold">Plate to Weights!</h1>
