@@ -14,6 +14,7 @@ import { DateNav } from "./components/DateNav/DateNav";
 import { WorkoutTimers } from "./components/WorkoutTimers/WorkoutTimers";
 import { SavedWorkouts } from "./components/SavedWorkouts/SavedWorkouts";
 import { CheckinCalendar } from "./components/CheckinCalendar/CheckinCalendar";
+import { AddExerciseDialog } from "./components/AddExerciseDialog/AddExerciseDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,6 @@ const App = () => {
   const [exercise, setExercise] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const dateKey = toDateKey(selectedDate);
-  const [name, setName] = useState("");
-  const [weight, setWeight] = useState("");
-  const [sets, setSets] = useState("");
-  const [reps, setReps] = useState("");
-  const [notes, setNotes] = useState("");
   const [desiredWeight, setDesiredWeight] = useState("");
   const [barbellWeight, setBarbellWeight] = useState("45");
   const [calculatedPlates, setCalculatedPlates] = useState([]);
@@ -66,25 +62,10 @@ const App = () => {
     saveWorkoutsForDate(dateKey, exercise);
   }, [exercise, dateKey, user]);
 
-  const addExercise = (event) => {
-    event.preventDefault();
-
-    const exerciseObject = {
-      id: crypto.randomUUID(),
-      name,
-      weight,
-      sets,
-      reps,
-      notes,
-      completedReps: [],
-    };
-
-    setExercise(exercise.concat(exerciseObject));
-    setName("");
-    setWeight("");
-    setSets("");
-    setReps("");
-    setNotes("");
+  const addExercise = (data) => {
+    setExercise(
+      exercise.concat({ id: crypto.randomUUID(), completedReps: [], ...data }),
+    );
   };
 
   const loadTemplateIntoDay = (templateExercises) => {
@@ -113,26 +94,6 @@ const App = () => {
     if (window.confirm(`Delete ${target.name}?`)) {
       setExercise(exercise.filter((e) => e.id !== id));
     }
-  };
-
-  const handleNameChange = (event) => {
-    setName(event.target.value);
-  };
-
-  const handleWeightChange = (event) => {
-    setWeight(event.target.value);
-  };
-
-  const handleSetChange = (event) => {
-    setSets(event.target.value);
-  };
-
-  const handleRepChange = (event) => {
-    setReps(event.target.value);
-  };
-
-  const handleNoteChange = (event) => {
-    setNotes(event.target.value);
   };
 
   const handleDesiredWeightChange = (event) => {
@@ -189,13 +150,10 @@ const App = () => {
     }),
   );
 
-  const showExercise = () => {
-    if (exercise.length === 0) {
-      return <h1>No exercises for {formatFriendly(selectedDate)}</h1>;
-    }
-    return (
-      <ul>
-        <h1>{formatFriendly(selectedDate)}'s workout</h1>
+  const showExercise = () => (
+    <div className="space-y-4">
+      <h1>{formatFriendly(selectedDate)}'s workout</h1>
+      {exercise.length > 0 && (
         <DndContext
           sensors={sensors}
           onDragEnd={handleDragEnd}
@@ -207,9 +165,10 @@ const App = () => {
             onEdit={editExercise}
           />
         </DndContext>
-      </ul>
-    );
-  };
+      )}
+      <AddExerciseDialog onAdd={addExercise} />
+    </div>
+  );
 
   const showCalculatedPlates = () => {
     if (calculatedPlates.length === 0) {
@@ -369,56 +328,6 @@ const App = () => {
         />
         <WorkoutTimers />
         {showExercise()}
-        <h1 className="text-2xl font-semibold">Save an exercise!</h1>
-        <form onSubmit={addExercise} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Workout Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={handleNameChange}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="weight">Weight</Label>
-            <Input
-              id="weight"
-              type="number"
-              min="0"
-              step="0.5"
-              value={weight}
-              onChange={handleWeightChange}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sets">Set Amount</Label>
-            <Input
-              id="sets"
-              type="number"
-              min="1"
-              value={sets}
-              onChange={handleSetChange}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reps">Target Rep Amount</Label>
-            <Input
-              id="reps"
-              type="number"
-              min="1"
-              value={reps}
-              onChange={handleRepChange}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Input id="notes" value={notes} onChange={handleNoteChange} />
-          </div>
-          <Button type="submit">Add Exercise</Button>
-        </form>
       </div>
     </>
   );
