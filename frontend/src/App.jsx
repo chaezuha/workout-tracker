@@ -40,6 +40,7 @@ const App = () => {
     Array(weights.length).fill(""),
   );
   const [plateBarbellWeight, setPlateBarbellWeight] = useState("45");
+  const [selectedPlates, setSelectedPlates] = useState([45, 35, 25, 10, 5, 2.5]);
   const [calculatedWeight, setCalculatedWeight] = useState(0);
 
   const { user, loading, signOut } = useAuth();
@@ -152,6 +153,17 @@ const App = () => {
     );
   };
 
+  const togglePlate = (w) => {
+    if (selectedPlates.includes(w)) {
+      setSelectedPlates(selectedPlates.filter((p) => p !== w));
+      // clear the count so a hidden input can't silently affect the total
+      const i = weights.indexOf(w);
+      setPlateCounts(plateCounts.map((c, j) => (j === i ? "" : c)));
+    } else {
+      setSelectedPlates(selectedPlates.concat(w));
+    }
+  };
+
   const getExercisePos = (id) =>
     exercise.findIndex((exercise) => exercise.id === id);
 
@@ -240,6 +252,7 @@ const App = () => {
 
     let temp_weight = Number(plateBarbellWeight) || 0;
     for (let i = 0; i < plateCounts.length; i++) {
+      if (!selectedPlates.includes(weights[i])) continue;
       temp_weight += (Number(plateCounts[i]) || 0) * weights[i];
     }
 
@@ -286,18 +299,39 @@ const App = () => {
               onChange={handlePlateBarbellWeightChange}
             />
           </div>
-          {weights.map((w, i) => (
-            <div key={w} className="space-y-2">
-              <Label htmlFor={`plate-${w}`}>{w} lb plates</Label>
-              <Input
-                id={`plate-${w}`}
-                type="number"
-                min="0"
-                value={plateCounts[i]}
-                onChange={handlePlateCountChange(i)}
-              />
+          <div className="space-y-2">
+            <Label>Plates</Label>
+            <div className="flex flex-wrap gap-2">
+              {weights.map((w) => (
+                <Button
+                  key={w}
+                  type="button"
+                  size="sm"
+                  variant={selectedPlates.includes(w) ? "default" : "outline"}
+                  onClick={() => togglePlate(w)}
+                >
+                  {w}
+                </Button>
+              ))}
             </div>
-          ))}
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {weights.map(
+              (w, i) =>
+                selectedPlates.includes(w) && (
+                  <div key={w} className="space-y-2">
+                    <Label htmlFor={`plate-${w}`}>{w} lb</Label>
+                    <Input
+                      id={`plate-${w}`}
+                      type="number"
+                      min="0"
+                      value={plateCounts[i]}
+                      onChange={handlePlateCountChange(i)}
+                    />
+                  </div>
+                ),
+            )}
+          </div>
           <Button type="submit">Calculate Weight</Button>
         </form>
       </div>
