@@ -15,6 +15,8 @@ import { WorkoutTimers } from "./components/WorkoutTimers/WorkoutTimers";
 import { SavedWorkouts } from "./components/SavedWorkouts/SavedWorkouts";
 import { CheckinCalendar } from "./components/CheckinCalendar/CheckinCalendar";
 import { AddExerciseDialog } from "./components/AddExerciseDialog/AddExerciseDialog";
+import { PlateSelector } from "./components/PlateSelector/PlateSelector";
+import { calculatePlateBreakdown } from "@/lib/plates";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,9 @@ const App = () => {
   );
   const [plateBarbellWeight, setPlateBarbellWeight] = useState("45");
   const [selectedPlates, setSelectedPlates] = useState([45, 35, 25, 10, 5, 2.5]);
+  const [roundMode, setRoundMode] = useState("up");
+  const [calcMode, setCalcMode] = useState("plateToWeight");
+  const [plateCalcSummary, setPlateCalcSummary] = useState(null);
   const [calculatedWeight, setCalculatedWeight] = useState(0);
 
   const { user, loading, signOut } = useAuth();
@@ -171,39 +176,76 @@ const App = () => {
   );
 
   const showCalculatedPlates = () => {
-    if (calculatedPlates.length === 0) {
+    if (!plateCalcSummary) {
       return <h1>Please input some values</h1>;
     }
-    return calculatedPlates.map(
-      (count, i) =>
-        count !== 0 && (
-          <p key={i}>
-            {count} × {weights[i]} lb
+    if (plateCalcSummary.error === "barbell") {
+      return (
+        <p className="text-destructive text-sm">
+          The barbell alone is heavier than the desired weight.
+        </p>
+      );
+    }
+    if (plateCalcSummary.error === "noPlates") {
+      return (
+        <p className="text-destructive text-sm">
+          Select some plates to load the bar.
+        </p>
+      );
+    }
+    return (
+      <div className="space-y-1">
+        {plateCalcSummary.exact ? (
+          <p className="font-medium">Total: {plateCalcSummary.total} lb</p>
+        ) : (
+          <p className="text-sm text-amber-600">
+            Can't hit {plateCalcSummary.desired} lb exactly with the selected
+            plates — rounded {plateCalcSummary.mode} to {plateCalcSummary.total}{" "}
+            lb.
           </p>
-        ),
+        )}
+        {calculatedPlates.map(
+          (count, i) =>
+            count !== 0 && (
+              <p key={i}>
+                {count} × {weights[i]} lb
+              </p>
+            ),
+        )}
+      </div>
     );
   };
 
   const calculatePlates = (event) => {
     event.preventDefault();
 
-    let remaining = desiredWeight - barbellWeight;
-    const results = [0, 0, 0, 0, 0, 0, 0, 0];
+    const desired = Number(desiredWeight);
+    const barbell = Number(barbellWeight);
+    const target = desired - barbell;
 
-    let i = 0;
-    while (remaining != 0 && i < weights.length) {
-      let tmp_val = Math.floor(remaining / weights[i]);
-      if (tmp_val >= 2) {
-        if (tmp_val % 2 !== 0) {
-          tmp_val -= 1;
-        }
-        results[i] = tmp_val;
-        remaining -= results[i] * weights[i];
-      }
-      i += 1;
+    if (target < 0) {
+      setCalculatedPlates([]);
+      setPlateCalcSummary({ error: "barbell" });
+      return;
+    }
+    if (selectedPlates.length === 0 && target > 0) {
+      setCalculatedPlates([]);
+      setPlateCalcSummary({ error: "noPlates" });
+      return;
     }
 
-    setCalculatedPlates(results);
+    const { counts, achieved, exact } = calculatePlateBreakdown(
+      target,
+      selectedPlates,
+      roundMode,
+    );
+    setCalculatedPlates(weights.map((w) => counts[w] ?? 0));
+    setPlateCalcSummary({
+      desired,
+      total: achieved + barbell,
+      exact,
+      mode: roundMode,
+    });
   };
 
   const calculateWeight = (event) => {
@@ -245,6 +287,24 @@ const App = () => {
         <CheckinCalendar />
       </div>
       <div className="mx-auto max-w-2xl p-6 space-y-6">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={calcMode === "plateToWeight" ? "default" : "outline"}
+            onClick={() => setCalcMode("plateToWeight")}
+          >
+            Plates to Weight
+          </Button>
+          <Button
+            type="button"
+            variant={calcMode === "weightToPlate" ? "default" : "outline"}
+            onClick={() => setCalcMode("weightToPlate")}
+          >
+            Weight to Plates
+          </Button>
+        </div>
+        {calcMode === "plateToWeight" ? (
+          <>
         {showCalculatedWeight()}
         <h1 className="text-2xl font-semibold">Plate to Weights!</h1>
         <form onSubmit={calculateWeight} className="space-y-4">
@@ -258,22 +318,11 @@ const App = () => {
               onChange={handlePlateBarbellWeightChange}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Plates</Label>
-            <div className="flex flex-wrap gap-2">
-              {weights.map((w) => (
-                <Button
-                  key={w}
-                  type="button"
-                  size="sm"
-                  variant={selectedPlates.includes(w) ? "default" : "outline"}
-                  onClick={() => togglePlate(w)}
-                >
-                  {w}
-                </Button>
-              ))}
-            </div>
-          </div>
+          <PlateSelector
+            weights={weights}
+            selected={selectedPlates}
+            onToggle={togglePlate}
+          />
           <div className="grid grid-cols-3 gap-3">
             {weights.map(
               (w, i) =>
@@ -293,8 +342,9 @@ const App = () => {
           </div>
           <Button type="submit">Calculate Weight</Button>
         </form>
-      </div>
-      <div className="mx-auto max-w-2xl p-6 space-y-6">
+          </>
+        ) : (
+          <>
         {showCalculatedPlates()}
         <h1 className="text-2xl font-semibold">Weight to Plates!</h1>
         <form onSubmit={calculatePlates} className="space-y-4">
@@ -316,8 +366,31 @@ const App = () => {
               required
             ></Input>
           </div>
+          <PlateSelector
+            weights={weights}
+            selected={selectedPlates}
+            onToggle={togglePlate}
+          />
+          <div className="space-y-2">
+            <Label>If the exact weight isn't possible</Label>
+            <div className="flex gap-2">
+              {["up", "down"].map((m) => (
+                <Button
+                  key={m}
+                  type="button"
+                  size="sm"
+                  variant={roundMode === m ? "default" : "outline"}
+                  onClick={() => setRoundMode(m)}
+                >
+                  Round {m}
+                </Button>
+              ))}
+            </div>
+          </div>
           <Button type="submit">Calculate Weights</Button>
         </form>
+          </>
+        )}
       </div>
 
       <div className="mx-auto max-w-2xl p-6 space-y-6">
