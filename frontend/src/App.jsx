@@ -12,6 +12,7 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "./components/Column/Column";
 import { DateNav } from "./components/DateNav/DateNav";
 import { WorkoutTimers } from "./components/WorkoutTimers/WorkoutTimers";
+import { SavedWorkouts } from "./components/SavedWorkouts/SavedWorkouts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -34,10 +35,11 @@ const App = () => {
   const [desiredWeight, setDesiredWeight] = useState("");
   const [barbellWeight, setBarbellWeight] = useState("45");
   const [calculatedPlates, setCalculatedPlates] = useState([]);
-  const [plateCounts, setPlateCounts] = useState(Array(weights.length).fill(""));
+  const [plateCounts, setPlateCounts] = useState(
+    Array(weights.length).fill(""),
+  );
   const [plateBarbellWeight, setPlateBarbellWeight] = useState("45");
   const [calculatedWeight, setCalculatedWeight] = useState(0);
-
 
   const { user, loading, signOut } = useAuth();
 
@@ -72,7 +74,7 @@ const App = () => {
       sets,
       reps,
       notes,
-      completedReps: []
+      completedReps: [],
     };
 
     setExercise(exercise.concat(exerciseObject));
@@ -83,9 +85,25 @@ const App = () => {
     setNotes("");
   };
 
+  const loadTemplateIntoDay = (templateExercises) => {
+    setExercise((prev) =>
+      prev.concat(
+        templateExercises.map((e) => ({
+          id: crypto.randomUUID(),
+          name: e.name,
+          weight: e.weight ?? "",
+          sets: e.sets,
+          reps: e.reps,
+          notes: e.notes ?? "",
+          completedReps: [],
+        })),
+      ),
+    );
+  };
+
   const editExercise = (id, data) => {
-    setExercise(exercise.map((e) => e.id === id ? {...e, ...data} : e));
-  }
+    setExercise(exercise.map((e) => (e.id === id ? { ...e, ...data } : e)));
+  };
 
   const deleteExercise = (id) => {
     const target = exercise.find((e) => e.id === id);
@@ -117,21 +135,21 @@ const App = () => {
 
   const handleDesiredWeightChange = (event) => {
     setDesiredWeight(event.target.value);
-  }
+  };
 
   const handleBarbellWeightChange = (event) => {
     setBarbellWeight(event.target.value);
-  }
+  };
 
   const handlePlateBarbellWeightChange = (event) => {
     setPlateBarbellWeight(event.target.value);
-  }
+  };
 
   const handlePlateCountChange = (i) => (event) => {
-    setPlateCounts(plateCounts.map((c, j) => j === i ? event.target.value : c));
-  }
-
-
+    setPlateCounts(
+      plateCounts.map((c, j) => (j === i ? event.target.value : c)),
+    );
+  };
 
   const getExercisePos = (id) =>
     exercise.findIndex((exercise) => exercise.id === id);
@@ -170,7 +188,11 @@ const App = () => {
           onDragEnd={handleDragEnd}
           collisionDetection={closestCorners}
         >
-          <Column exercises={exercise} onDelete={deleteExercise} onEdit={editExercise} />
+          <Column
+            exercises={exercise}
+            onDelete={deleteExercise}
+            onEdit={editExercise}
+          />
         </DndContext>
       </ul>
     );
@@ -178,12 +200,17 @@ const App = () => {
 
   const showCalculatedPlates = () => {
     if (calculatedPlates.length === 0) {
-      return <h1>Please input some values</h1>
+      return <h1>Please input some values</h1>;
     }
-    return calculatedPlates.map((count, i) =>
-      count !== 0 && <p key={i}>{count} × {weights[i]} lb</p>
-    )
-  }
+    return calculatedPlates.map(
+      (count, i) =>
+        count !== 0 && (
+          <p key={i}>
+            {count} × {weights[i]} lb
+          </p>
+        ),
+    );
+  };
 
   const calculatePlates = (event) => {
     event.preventDefault();
@@ -205,7 +232,7 @@ const App = () => {
     }
 
     setCalculatedPlates(results);
-  }
+  };
 
   const calculateWeight = (event) => {
     event.preventDefault();
@@ -215,15 +242,15 @@ const App = () => {
       temp_weight += (Number(plateCounts[i]) || 0) * weights[i];
     }
 
-    setCalculatedWeight(temp_weight)
-  }
+    setCalculatedWeight(temp_weight);
+  };
 
   const showCalculatedWeight = () => {
     if (calculatedWeight === 0) {
-      return <h1>Please input some values</h1>
+      return <h1>Please input some values</h1>;
     }
-    return <p>{calculatedWeight} lb</p>
-  }
+    return <p>{calculatedWeight} lb</p>;
+  };
 
   if (loading) {
     return null;
@@ -235,13 +262,13 @@ const App = () => {
 
   return (
     <>
-    <div className="mx-auto max-w-2xl p-6 flex items-center justify-between">
-      <span className="text-sm text-muted-foreground">{user.email}</span>
-      <Button type="button" variant="outline" onClick={signOut}>
-        Sign out
-      </Button>
-    </div>
-    <div className="mx-auto max-w-2xl p-6 space-y-6">
+      <div className="mx-auto max-w-2xl p-6 flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">{user.email}</span>
+        <Button type="button" variant="outline" onClick={signOut}>
+          Sign out
+        </Button>
+      </div>
+      <div className="mx-auto max-w-2xl p-6 space-y-6">
         {showCalculatedWeight()}
         <h1 className="text-2xl font-semibold">Plate to Weights!</h1>
         <form onSubmit={calculateWeight} className="space-y-4">
@@ -269,91 +296,92 @@ const App = () => {
           ))}
           <Button type="submit">Calculate Weight</Button>
         </form>
-    </div>
-    <div className="mx-auto max-w-2xl p-6 space-y-6">
+      </div>
+      <div className="mx-auto max-w-2xl p-6 space-y-6">
         {showCalculatedPlates()}
         <h1 className="text-2xl font-semibold">Weight to Plates!</h1>
         <form onSubmit={calculatePlates} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="Desired Weight">Desired Weight</Label>
             <Input
-              id = "Desired Weight"
+              id="Desired Weight"
               value={desiredWeight}
               onChange={handleDesiredWeightChange}
               required
-            >
-            </Input>
+            ></Input>
           </div>
           <div className="space-y-2">
             <Label htmlFor="Desired Weight">Barell Weight</Label>
             <Input
-              id = "Barbell Weight"
+              id="Barbell Weight"
               value={barbellWeight}
               onChange={handleBarbellWeightChange}
               required
-            >
-            </Input>
+            ></Input>
           </div>
           <Button type="submit">Calculate Weights</Button>
         </form>
-    </div>
+      </div>
 
-      
-    <div className="mx-auto max-w-2xl p-6 space-y-6">
-      <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
-      <WorkoutTimers />
-      {showExercise()}
-      <h1 className="text-2xl font-semibold">Save an exercise!</h1>
-      <form onSubmit={addExercise} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Workout Name</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={handleNameChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="weight">Weight</Label>
-          <Input
-            id="weight"
-            type="number"
-            min="0"
-            step="0.5"
-            value={weight}
-            onChange={handleWeightChange}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sets">Set Amount</Label>
-          <Input
-            id="sets"
-            type="number"
-            min="1"
-            value={sets}
-            onChange={handleSetChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="reps">Target Rep Amount</Label>
-          <Input
-            id="reps"
-            type="number"
-            min="1"
-            value={reps}
-            onChange={handleRepChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="notes">Notes</Label>
-          <Input id="notes" value={notes} onChange={handleNoteChange} />
-        </div>
-        <Button type="submit">Save Workout</Button>
-      </form>
-    </div>
+      <div className="mx-auto max-w-2xl p-6 space-y-6">
+        <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        <SavedWorkouts
+          dayExercises={exercise}
+          onLoadTemplate={loadTemplateIntoDay}
+        />
+        <WorkoutTimers />
+        {showExercise()}
+        <h1 className="text-2xl font-semibold">Save an exercise!</h1>
+        <form onSubmit={addExercise} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Workout Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={handleNameChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="weight">Weight</Label>
+            <Input
+              id="weight"
+              type="number"
+              min="0"
+              step="0.5"
+              value={weight}
+              onChange={handleWeightChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sets">Set Amount</Label>
+            <Input
+              id="sets"
+              type="number"
+              min="1"
+              value={sets}
+              onChange={handleSetChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reps">Target Rep Amount</Label>
+            <Input
+              id="reps"
+              type="number"
+              min="1"
+              value={reps}
+              onChange={handleRepChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Input id="notes" value={notes} onChange={handleNoteChange} />
+          </div>
+          <Button type="submit">Add Exercise</Button>
+        </form>
+      </div>
     </>
   );
 };
