@@ -13,6 +13,7 @@ import { Column } from "./components/Column/Column";
 import { DateNav } from "./components/DateNav/DateNav";
 import { WorkoutTimers } from "./components/WorkoutTimers/WorkoutTimers";
 import { SavedWorkouts } from "./components/SavedWorkouts/SavedWorkouts";
+import { CheckinCalendar } from "./components/CheckinCalendar/CheckinCalendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -267,6 +268,9 @@ const App = () => {
         <Button type="button" variant="outline" onClick={signOut}>
           Sign out
         </Button>
+      </div>
+      <div className="mx-auto max-w-2xl p-6 space-y-6">
+        <CheckinCalendar />
       </div>
       <div className="mx-auto max-w-2xl p-6 space-y-6">
         {showCalculatedWeight()}

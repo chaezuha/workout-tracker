@@ -129,6 +129,12 @@
     }
 }
 
+.day-checked-in {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 9999px;
+}
+
 .day-has-workout::after {
   content: "";
   position: absolute;
