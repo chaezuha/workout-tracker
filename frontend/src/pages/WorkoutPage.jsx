@@ -26,6 +26,10 @@ export const WorkoutPage = () => {
   const { user } = useAuth();
 
   const loadedDateRef = useRef(null);
+  // Saves must run one at a time: saveWorkoutsForDate deletes rows missing
+  // from the list it was given, so a save started with a stale list would
+  // delete rows a newer overlapping save just inserted.
+  const saveQueueRef = useRef(Promise.resolve());
 
   useEffect(() => {
     if (!user) return;
@@ -43,12 +47,14 @@ export const WorkoutPage = () => {
   useEffect(() => {
     if (!user) return;
     if (loadedDateRef.current !== dateKey) return;
-    saveWorkoutsForDate(dateKey, exercise);
+    saveQueueRef.current = saveQueueRef.current
+      .then(() => saveWorkoutsForDate(dateKey, exercise))
+      .catch((err) => console.error("Failed to save workout", err));
   }, [exercise, dateKey, user]);
 
   const addExercise = (data) => {
-    setExercise(
-      exercise.concat({ id: crypto.randomUUID(), completedReps: [], ...data }),
+    setExercise((prev) =>
+      prev.concat({ id: crypto.randomUUID(), completedReps: [], ...data }),
     );
   };
 
@@ -69,14 +75,16 @@ export const WorkoutPage = () => {
   };
 
   const editExercise = (id, data) => {
-    setExercise(exercise.map((e) => (e.id === id ? { ...e, ...data } : e)));
+    setExercise((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...data } : e)),
+    );
   };
 
   const deleteExercise = (id) => {
     const target = exercise.find((e) => e.id === id);
 
     if (window.confirm(`Delete ${target.name}?`)) {
-      setExercise(exercise.filter((e) => e.id !== id));
+      setExercise((prev) => prev.filter((e) => e.id !== id));
     }
   };
 
