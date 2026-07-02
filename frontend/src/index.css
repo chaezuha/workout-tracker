@@ -133,6 +133,7 @@
   background-color: var(--primary);
   color: var(--primary-foreground);
   border-radius: 9999px;
+  font-weight: 500;
 }
 
 .day-has-workout::after {

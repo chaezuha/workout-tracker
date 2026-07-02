@@ -87,7 +87,7 @@ export const SavedWorkouts = ({ dayExercises, onLoadTemplate }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline">
+        <Button type="button" variant="outline" size="sm">
           Workouts
         </Button>
       </DialogTrigger>

@@ -1,5 +1,3 @@
-import React from "react";
-import "./Column.css";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -7,7 +5,7 @@ import {
 import { Exercise } from "../../Exercise/Exercise";
 export const Column = ({ exercises, onDelete, onEdit }) => {
   return (
-    <div className="column">
+    <div className="flex flex-col gap-3">
       <SortableContext
         items={exercises.map((e) => e.id)}
         strategy={verticalListSortingStrategy}

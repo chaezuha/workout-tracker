@@ -21,10 +21,10 @@ export const WorkoutTimers = () => {
   };
 
   return (
-    <div className="rounded-lg border p-4 space-y-4">
+    <div className="rounded-xl border p-4 space-y-4 shadow-xs">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="text-sm text-muted-foreground">Workout time</div>
+          <div className="text-sm text-muted-foreground">Workout timer</div>
           <div className="text-2xl font-semibold tabular-nums">
             {formatDuration(workout.elapsed)}
           </div>
@@ -62,6 +62,7 @@ export const WorkoutTimers = () => {
                   key={seconds}
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() => rest.start(seconds)}
                 >
                   {seconds}s

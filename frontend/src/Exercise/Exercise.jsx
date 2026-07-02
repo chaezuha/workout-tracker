@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import "./Exercise.css";
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
@@ -55,25 +54,32 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="exercise">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="flex w-full touch-none flex-wrap items-center gap-3 rounded-xl border bg-card p-4 shadow-xs"
+    >
       <div
         {...listeners}
         className="text-2xl px-2 cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground"
       >
         ⠿
       </div>
-      <div className="space-y-1">
-        <div className="font-semibold">{name}</div>
-        <div className="text-sm text-muted-foreground">Weight: {weight}</div>
-        <div className="text-sm text-muted-foreground">Sets: {sets}</div>
-        <div className="text-sm text-muted-foreground">Reps: {reps}</div>
+      <div className="min-w-0 space-y-1">
+        <div className="font-medium">{name}</div>
+        <div className="text-sm text-muted-foreground">
+          {weight ? `${weight} lb · ` : ""}
+          {sets} sets × {reps} reps
+        </div>
         {notes && (
-          <div className="text-sm text-muted-foreground">Notes: {notes}</div>
+          <div className="truncate text-sm text-muted-foreground">{notes}</div>
         )}
       </div>
+      <div className="ml-auto flex gap-2">
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline">Reps</Button>
+          <Button variant="outline" size="sm">Reps</Button>
         </DialogTrigger>
         <DialogContent className = "sm:max-w-sm">
           <form onSubmit={(e) => {
@@ -81,9 +87,9 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
             onEdit(id, {completedReps: inputReps});
           }}>
             <DialogHeader>
-              <DialogTitle>Edit Reps</DialogTitle>
+              <DialogTitle>Log reps</DialogTitle>
               <DialogDescription>
-                Count the amount of reps per set
+                Record the reps you completed for each set
               </DialogDescription>
             </DialogHeader>
             <FieldGroup>
@@ -93,14 +99,14 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Save Reps</Button>
+              <Button type="submit">Save reps</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
       <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">Edit</Button>
+            <Button variant="outline" size="sm">Edit</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
           <form onSubmit={(e) => {
@@ -109,9 +115,9 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
             onEdit(id, data);
           }}>
             <DialogHeader>
-              <DialogTitle>Edit Mode</DialogTitle>
+              <DialogTitle>Edit exercise</DialogTitle>
               <DialogDescription>
-                Make changes to your exercise
+                Update the details for this exercise
               </DialogDescription>
             </DialogHeader>
             <FieldGroup>
@@ -140,19 +146,21 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit"> Save changes</Button>
+              <Button type="submit">Save changes</Button>
             </DialogFooter>
           </form>
           </DialogContent>
       </Dialog>
       <Button
-        variant="destructive"
+        variant="ghost"
         size="sm"
+        className="text-destructive hover:text-destructive"
         onClick={() => onDelete(id)}
         onPointerDown={(e) => e.stopPropagation()}
       >
         Delete
       </Button>
+      </div>
     </div>
   );
 };

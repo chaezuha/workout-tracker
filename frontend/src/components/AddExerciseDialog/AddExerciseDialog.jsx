@@ -39,10 +39,9 @@ export const AddExerciseDialog = ({ onAdd }) => {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="w-4/5 max-w-[500px] rounded-md border-2 border-dashed border-muted-foreground/40 p-6 text-3xl text-muted-foreground hover:border-muted-foreground hover:text-foreground"
-          aria-label="Add exercise"
+          className="w-full rounded-xl border border-dashed border-muted-foreground/40 p-3 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
         >
-          +
+          + Add exercise
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
