@@ -3,10 +3,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
-export function AuthForm() {
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState("signin");
+export function AuthForm({ initialMode = "signin" }) {
+  const { signIn, signUp, continueAsGuest, authScreen, cancelAuthScreen } =
+    useAuth();
+  const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -87,6 +89,33 @@ export function AuthForm() {
           ? "Already have an account? Sign in"
           : "Need an account? Sign up"}
       </Button>
+
+      <Separator />
+
+      {authScreen ? (
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          onClick={cancelAuthScreen}
+        >
+          ← Back to guest session
+        </Button>
+      ) : (
+        <div className="space-y-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={continueAsGuest}
+          >
+            Continue as guest
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Your data stays on this device.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

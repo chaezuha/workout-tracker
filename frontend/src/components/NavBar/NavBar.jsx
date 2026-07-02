@@ -10,11 +10,11 @@ const links = [
 ];
 
 export const NavBar = () => {
-  const { user, signOut } = useAuth();
+  const { user, isGuest, signOut, showAuthScreen } = useAuth();
 
   return (
     <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
+      <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-3">
         <nav className="flex gap-1">
           {links.map(({ to, label }) => (
             <NavLink
@@ -32,13 +32,43 @@ export const NavBar = () => {
             </NavLink>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
-          <span className="hidden max-w-[16ch] truncate text-sm text-muted-foreground sm:inline">
-            {user.email}
-          </span>
-          <Button type="button" variant="outline" size="sm" onClick={signOut}>
-            Sign out
-          </Button>
+        <div className="ml-auto flex items-center gap-3">
+          {isGuest ? (
+            <>
+              <span className="hidden text-sm text-muted-foreground sm:inline">
+                Guest
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => showAuthScreen("signup")}
+              >
+                Sign up
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => showAuthScreen("signin")}
+              >
+                Sign in
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="hidden max-w-[16ch] truncate text-sm text-muted-foreground sm:inline">
+                {user.email}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+              >
+                Sign out
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

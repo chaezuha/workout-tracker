@@ -1,4 +1,11 @@
 import { supabase } from "@/lib/supabase";
+import { isGuestMode } from "@/lib/guestMode";
+import {
+  localGetTemplates,
+  localCreateTemplate,
+  localUpdateTemplate,
+  localDeleteTemplate,
+} from "@/services/localStore";
 
 function rowToTemplate(row) {
   return {
@@ -16,6 +23,7 @@ function translateError(error) {
 }
 
 export async function getTemplates() {
+  if (isGuestMode()) return localGetTemplates();
   const { data, error } = await supabase
     .from("workout_templates")
     .select("*")
@@ -25,6 +33,7 @@ export async function getTemplates() {
 }
 
 export async function createTemplate(name, exercises) {
+  if (isGuestMode()) return localCreateTemplate(name, exercises);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -40,6 +49,7 @@ export async function createTemplate(name, exercises) {
 }
 
 export async function updateTemplate(id, { name, exercises }) {
+  if (isGuestMode()) return localUpdateTemplate(id, { name, exercises });
   const { data, error } = await supabase
     .from("workout_templates")
     .update({ name, exercises })
@@ -51,6 +61,7 @@ export async function updateTemplate(id, { name, exercises }) {
 }
 
 export async function deleteTemplate(id) {
+  if (isGuestMode()) return localDeleteTemplate(id);
   const { error } = await supabase
     .from("workout_templates")
     .delete()

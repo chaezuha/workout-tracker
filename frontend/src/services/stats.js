@@ -1,20 +1,17 @@
 import { supabase } from "@/lib/supabase";
+import { isGuestMode } from "@/lib/guestMode";
+import { localGetAllExerciseRows } from "@/services/localStore";
 
 export function estimateOneRepMax(weight, reps) {
   if (reps === 1) return weight;
   return weight * (1 + reps / 30);
 }
 
-export async function getExerciseStats() {
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("name, weight, sets, reps, date");
-  if (error) throw error;
-
+function aggregateStats(rows) {
   const byName = new Map();
   const allDates = new Set();
 
-  for (const row of data) {
+  for (const row of rows) {
     const name = row.name.trim();
     if (!name) continue;
     allDates.add(row.date);
@@ -47,4 +44,13 @@ export async function getExerciseStats() {
       sessions: allDates.size,
     },
   };
+}
+
+export async function getExerciseStats() {
+  if (isGuestMode()) return aggregateStats(localGetAllExerciseRows());
+  const { data, error } = await supabase
+    .from("exercises")
+    .select("name, weight, sets, reps, date");
+  if (error) throw error;
+  return aggregateStats(data);
 }

@@ -1,4 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import { isGuestMode } from "@/lib/guestMode";
+import {
+  localGetWorkoutsForDate,
+  localSaveWorkoutsForDate,
+  localGetDatesWithWorkouts,
+} from "@/services/localStore";
 
 function rowToExercise(row) {
   return {
@@ -13,6 +19,7 @@ function rowToExercise(row) {
 }
 
 export async function getWorkoutsForDate(dateKey) {
+  if (isGuestMode()) return localGetWorkoutsForDate(dateKey);
   const { data, error } = await supabase
     .from("exercises")
     .select("*")
@@ -23,6 +30,7 @@ export async function getWorkoutsForDate(dateKey) {
 }
 
 export async function saveWorkoutsForDate(dateKey, exercises) {
+  if (isGuestMode()) return localSaveWorkoutsForDate(dateKey, exercises);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -56,6 +64,7 @@ export async function saveWorkoutsForDate(dateKey, exercises) {
 }
 
 export async function getDatesWithWorkouts() {
+  if (isGuestMode()) return localGetDatesWithWorkouts();
   const { data, error } = await supabase.from("exercises").select("date");
   if (error) throw error;
   return [...new Set(data.map((r) => r.date))];
