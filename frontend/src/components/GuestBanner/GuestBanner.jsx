@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const DISMISS_KEY = "guest:bannerDismissed";
 
 export const GuestBanner = () => {
-  const { isGuest, showAuthScreen } = useAuth();
+  const { isGuest } = useAuth();
   const [dismissed, setDismissed] = useState(
     () => sessionStorage.getItem(DISMISS_KEY) === "1",
   );
@@ -23,13 +24,12 @@ export const GuestBanner = () => {
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-6 py-2 text-sm">
         <p>
           You're in guest mode so your data is saved only in this browser.{" "}
-          <button
-            type="button"
+          <Link
+            to="/auth?mode=signup"
             className="font-medium underline underline-offset-2"
-            onClick={() => showAuthScreen("signup")}
           >
             Sign up
-          </button>{" "}
+          </Link>{" "}
           to save data.
         </p>
         <Button

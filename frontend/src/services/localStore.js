@@ -165,7 +165,11 @@ export function seedGuestTemplatesOnce() {
   if (!readJSON(GUEST_KEYS.templates, []).length) {
     writeJSON(
       GUEST_KEYS.templates,
-      SAMPLE_TEMPLATES.map((t) => ({ id: crypto.randomUUID(), ...t })),
+      SAMPLE_TEMPLATES.map((t) => ({
+        id: crypto.randomUUID(),
+        isSample: true,
+        ...t,
+      })),
     );
   }
   localStorage.setItem(GUEST_KEYS.seeded, "1");

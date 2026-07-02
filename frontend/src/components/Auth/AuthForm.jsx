@@ -1,21 +1,30 @@
 import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-export function AuthForm({ initialMode = "signin" }) {
-  const { signIn, signUp, continueAsGuest, authScreen, cancelAuthScreen } =
-    useAuth();
-  const [mode, setMode] = useState(initialMode);
+export function AuthForm() {
+  const { signIn, signUp } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const isSignup = mode === "signup";
+  const isSignup = searchParams.get("mode") === "signup";
+
+  const toggleMode = () => {
+    setSearchParams(
+      { mode: isSignup ? "signin" : "signup" },
+      { replace: true },
+    );
+    setError("");
+    setMessage("");
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -75,16 +84,7 @@ export function AuthForm({ initialMode = "signin" }) {
         </Button>
       </form>
 
-      <Button
-        type="button"
-        variant="link"
-        className="w-full"
-        onClick={() => {
-          setMode(isSignup ? "signin" : "signup");
-          setError("");
-          setMessage("");
-        }}
-      >
+      <Button type="button" variant="link" className="w-full" onClick={toggleMode}>
         {isSignup
           ? "Already have an account? Sign in"
           : "Need an account? Sign up"}
@@ -92,30 +92,9 @@ export function AuthForm({ initialMode = "signin" }) {
 
       <Separator />
 
-      {authScreen ? (
-        <Button
-          type="button"
-          variant="ghost"
-          className="w-full"
-          onClick={cancelAuthScreen}
-        >
-          ← Back to guest session
-        </Button>
-      ) : (
-        <div className="space-y-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full"
-            onClick={continueAsGuest}
-          >
-            Continue as guest
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Your data stays on this device.
-          </p>
-        </div>
-      )}
+      <Button asChild variant="ghost" className="w-full">
+        <Link to="/">← Back to guest session</Link>
+      </Button>
     </div>
   );
 }

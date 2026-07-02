@@ -18,4 +18,15 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // shadcn ui files export cva variants and context files export hooks
+    // alongside their components; these files fall back to a full reload
+    // instead of fast refresh, which is fine.
+    files: ['src/components/ui/**/*.jsx', 'src/contexts/**/*.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    files: ['vite.config.js'],
+    languageOptions: { globals: globals.node },
+  },
 ])

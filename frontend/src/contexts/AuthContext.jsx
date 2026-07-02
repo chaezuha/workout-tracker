@@ -17,9 +17,6 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [guestActive, setGuestActive] = useState(() => isGuestMode());
-  // null | "signin" | "signup" — set when a guest opens the auth form.
-  // In-memory only: a refresh mid-form lands back in the guest app.
-  const [authScreen, setAuthScreen] = useState(null);
 
   useEffect(() => {
     // A real session always wins over guest mode; the guest flag must be
@@ -28,7 +25,11 @@ export function AuthProvider({ children }) {
       if (session) {
         disableGuestMode();
         setGuestActive(false);
-        setAuthScreen(null);
+      } else {
+        // No account session: the app runs in guest mode by default.
+        enableGuestMode();
+        seedGuestTemplatesOnce();
+        setGuestActive(true);
       }
       setSession(session);
     };
@@ -45,22 +46,13 @@ export function AuthProvider({ children }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const isGuest = !session && guestActive && !authScreen;
+  const isGuest = !session && guestActive;
 
   const value = {
     session,
     user: session?.user ?? (isGuest ? GUEST_USER : null),
     isGuest,
-    authScreen,
     loading,
-    continueAsGuest: () => {
-      enableGuestMode();
-      seedGuestTemplatesOnce();
-      setGuestActive(true);
-      setAuthScreen(null);
-    },
-    showAuthScreen: (mode) => setAuthScreen(mode),
-    cancelAuthScreen: () => setAuthScreen(null),
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
     signIn: (email, password) =>
       supabase.auth.signInWithPassword({ email, password }),

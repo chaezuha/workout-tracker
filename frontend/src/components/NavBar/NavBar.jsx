@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,7 +10,7 @@ const links = [
 ];
 
 export const NavBar = () => {
-  const { user, isGuest, signOut, showAuthScreen } = useAuth();
+  const { user, isGuest, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
@@ -38,20 +38,11 @@ export const NavBar = () => {
               <span className="hidden text-sm text-muted-foreground sm:inline">
                 Guest
               </span>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => showAuthScreen("signup")}
-              >
-                Sign up
+              <Button asChild size="sm">
+                <Link to="/auth?mode=signup">Sign up</Link>
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => showAuthScreen("signin")}
-              >
-                Sign in
+              <Button asChild variant="outline" size="sm">
+                <Link to="/auth?mode=signin">Sign in</Link>
               </Button>
             </>
           ) : (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,7 +114,10 @@ export const SavedWorkouts = ({ dayExercises, onLoadTemplate }) => {
                     className="flex items-center justify-between gap-2 rounded-md border p-3"
                   >
                     <div>
-                      <div className="font-semibold">{t.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{t.name}</span>
+                        {t.isSample && <Badge variant="secondary">Sample</Badge>}
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         {t.exercises.length}{" "}
                         {t.exercises.length === 1 ? "exercise" : "exercises"}
