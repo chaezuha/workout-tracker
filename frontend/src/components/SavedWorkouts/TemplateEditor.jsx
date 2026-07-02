@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ExerciseNameAutocomplete } from "@/components/ExerciseNameAutocomplete/ExerciseNameAutocomplete";
+import { getExerciseSuggestions } from "@/services/exercises";
 import {
   DialogDescription,
   DialogFooter,
@@ -40,8 +42,32 @@ export const TemplateEditor = ({
       : [emptyRow()]
   );
 
+  const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    getExerciseSuggestions()
+      .then(setSuggestions)
+      .catch(() => setSuggestions([]));
+  }, []);
+
   const updateRow = (key, field, value) => {
     setRows(rows.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
+  };
+
+  const fillRowFromSuggestion = (key, s) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.key === key
+          ? {
+              ...r,
+              name: s.name,
+              weight: s.weight === "" ? "" : String(s.weight),
+              sets: String(s.sets ?? ""),
+              reps: String(s.reps ?? ""),
+            }
+          : r
+      )
+    );
   };
 
   const removeRow = (key) => {
@@ -96,10 +122,12 @@ export const TemplateEditor = ({
             </div>
             <Field>
               <Label htmlFor={`ex-name-${row.key}`}>Name</Label>
-              <Input
+              <ExerciseNameAutocomplete
                 id={`ex-name-${row.key}`}
                 value={row.name}
-                onChange={(e) => updateRow(row.key, "name", e.target.value)}
+                onChange={(value) => updateRow(row.key, "name", value)}
+                suggestions={suggestions}
+                onSelect={(s) => fillRowFromSuggestion(row.key, s)}
                 required
               />
             </Field>

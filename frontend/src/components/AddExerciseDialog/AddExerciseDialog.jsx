@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ExerciseNameAutocomplete } from "@/components/ExerciseNameAutocomplete/ExerciseNameAutocomplete";
+import { getExerciseSuggestions } from "@/services/exercises";
 import {
   Dialog,
   DialogClose,
@@ -21,6 +23,20 @@ export const AddExerciseDialog = ({ onAdd }) => {
   const [sets, setSets] = useState("");
   const [reps, setReps] = useState("");
   const [notes, setNotes] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    if (!open) return;
+    getExerciseSuggestions()
+      .then(setSuggestions)
+      .catch(() => setSuggestions([]));
+  }, [open]);
+
+  const handleSelectSuggestion = (s) => {
+    setWeight(s.weight === "" ? "" : String(s.weight));
+    setSets(String(s.sets ?? ""));
+    setReps(String(s.reps ?? ""));
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -55,10 +71,12 @@ export const AddExerciseDialog = ({ onAdd }) => {
           <FieldGroup>
             <Field>
               <Label htmlFor="add-name">Name</Label>
-              <Input
+              <ExerciseNameAutocomplete
                 id="add-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={setName}
+                suggestions={suggestions}
+                onSelect={handleSelectSuggestion}
                 required
               />
             </Field>
