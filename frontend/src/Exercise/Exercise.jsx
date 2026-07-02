@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 
 export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, onDelete, onEdit }) => {
   const [inputReps, setNewReps] = useState(completedReps ?? []);
+  const [repsOpen, setRepsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -77,14 +79,15 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
         )}
       </div>
       <div className="ml-auto flex gap-2">
-      <Dialog>
+      <Dialog open={repsOpen} onOpenChange={setRepsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">Reps</Button>
         </DialogTrigger>
         <DialogContent className = "sm:max-w-sm">
-          <form onSubmit={(e) => {
+          <form className="grid gap-4" onSubmit={(e) => {
             e.preventDefault();
             onEdit(id, {completedReps: inputReps});
+            setRepsOpen(false);
           }}>
             <DialogHeader>
               <DialogTitle>Log reps</DialogTitle>
@@ -92,7 +95,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
                 Record the reps you completed for each set
               </DialogDescription>
             </DialogHeader>
-            <FieldGroup>
+            <FieldGroup className="max-h-[55vh] overflow-y-auto">
               {renderReps()}
             </FieldGroup>
             <DialogFooter>
@@ -104,15 +107,16 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, o
           </form>
         </DialogContent>
       </Dialog>
-      <Dialog>
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">Edit</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
-          <form onSubmit={(e) => {
+          <form className="grid gap-4" onSubmit={(e) => {
             e.preventDefault();
             const data = Object.fromEntries(new FormData(e.target));
             onEdit(id, data);
+            setEditOpen(false);
           }}>
             <DialogHeader>
               <DialogTitle>Edit exercise</DialogTitle>
