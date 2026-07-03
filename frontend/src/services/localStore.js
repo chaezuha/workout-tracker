@@ -23,6 +23,15 @@ function writeJSON(key, value) {
   }
 }
 
+// True when there is guest data worth migrating to an account: any workout
+// day, session, check-in, or non-sample template.
+export function localHasGuestData() {
+  if (Object.keys(readJSON(GUEST_KEYS.workouts, {})).length) return true;
+  if (Object.keys(readJSON(GUEST_KEYS.sessions, {})).length) return true;
+  if (readJSON(GUEST_KEYS.checkins, []).length) return true;
+  return readJSON(GUEST_KEYS.templates, []).some((t) => !t.isSample);
+}
+
 // --- Workouts ---
 
 function stripSessionId(exercise) {

@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { NavBar } from "./components/NavBar/NavBar";
 import { GuestBanner } from "./components/GuestBanner/GuestBanner";
+import { GuestMigrationPrompt } from "./components/GuestMigrationPrompt/GuestMigrationPrompt";
 import { WorkoutPage } from "./pages/WorkoutPage";
 import { CheckinPage } from "./pages/CheckinPage";
 import { CalculatorsPage } from "./pages/CalculatorsPage";
@@ -18,6 +19,7 @@ const AppLayout = () => (
   <>
     <NavBar />
     <GuestBanner />
+    <GuestMigrationPrompt />
     <Outlet />
   </>
 );
