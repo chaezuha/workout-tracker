@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { PlateSelector } from "@/components/PlateSelector/PlateSelector";
+import { TdeeCalculator } from "@/components/TdeeCalculator/TdeeCalculator";
+import { BmiCalculator } from "@/components/BmiCalculator/BmiCalculator";
 import { calculatePlateBreakdown } from "@/lib/plates";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +12,8 @@ const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
 const modes = [
   { id: "plateToWeight", label: "Plates to weight" },
   { id: "weightToPlate", label: "Weight to plates" },
+  { id: "tdee", label: "TDEE" },
+  { id: "bmi", label: "BMI" },
 ];
 
 export const CalculatorsPage = () => {
@@ -169,7 +173,7 @@ export const CalculatorsPage = () => {
           Work out what's on the bar — or what should be.
         </p>
       </div>
-      <div className="inline-flex rounded-lg bg-muted p-1">
+      <div className="inline-flex flex-wrap gap-1 rounded-lg bg-muted p-1">
         {modes.map(({ id, label }) => (
           <Button
             key={id}
@@ -182,7 +186,11 @@ export const CalculatorsPage = () => {
           </Button>
         ))}
       </div>
-      {calcMode === "plateToWeight" ? (
+      {calcMode === "tdee" ? (
+        <TdeeCalculator />
+      ) : calcMode === "bmi" ? (
+        <BmiCalculator />
+      ) : calcMode === "plateToWeight" ? (
         <>
           <form onSubmit={calculateWeight} className="space-y-4">
             <div className="space-y-2">
