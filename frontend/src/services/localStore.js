@@ -2,7 +2,9 @@ import { GUEST_KEYS } from "@/lib/guestMode";
 
 // localStorage-backed counterparts of the Supabase services, used in guest
 // mode. Exercises are stored in app shape ({ id, name, weight, sets, reps,
-// notes, completedReps }); array order is the position.
+// notes, completedReps }) plus a sessionId; array order is the position.
+// Sessions are stored per date as { id, name, position, durationSeconds,
+// createdAt }.
 
 function readJSON(key, fallback) {
   try {
@@ -23,19 +25,102 @@ function writeJSON(key, value) {
 
 // --- Workouts ---
 
-export function localGetWorkoutsForDate(dateKey) {
-  const all = readJSON(GUEST_KEYS.workouts, {});
-  return all[dateKey] ?? [];
+function stripSessionId(exercise) {
+  const copy = { ...exercise };
+  delete copy.sessionId;
+  return copy;
 }
 
-export function localSaveWorkoutsForDate(dateKey, exercises) {
-  const all = readJSON(GUEST_KEYS.workouts, {});
-  if ((exercises ?? []).length) {
-    all[dateKey] = exercises;
-  } else {
-    delete all[dateKey];
+export function localGetDayForDate(dateKey) {
+  const workoutsAll = readJSON(GUEST_KEYS.workouts, {});
+  const sessionsAll = readJSON(GUEST_KEYS.sessions, {});
+  let exercises = workoutsAll[dateKey] ?? [];
+  let sessions = (sessionsAll[dateKey] ?? [])
+    .slice()
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  let migrated = false;
+
+  // Lazy migration of pre-session data: old session records were duration-only
+  // ({ id, durationSeconds, createdAt }) and exercises had no sessionId.
+  if (sessions.some((s) => s.position == null || s.name === undefined)) {
+    sessions = sessions.map((s, i) => ({
+      name: null,
+      ...s,
+      position: s.position ?? i,
+    }));
+    migrated = true;
   }
-  writeJSON(GUEST_KEYS.workouts, all);
+
+  if (exercises.length && !sessions.length) {
+    sessions = [
+      {
+        id: crypto.randomUUID(),
+        name: null,
+        position: 0,
+        durationSeconds: 0,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    migrated = true;
+  }
+
+  const sessionIds = new Set(sessions.map((s) => s.id));
+  if (exercises.some((e) => !sessionIds.has(e.sessionId))) {
+    const firstId = sessions[0].id;
+    exercises = exercises.map((e) =>
+      sessionIds.has(e.sessionId) ? e : { ...e, sessionId: firstId },
+    );
+    migrated = true;
+  }
+
+  if (migrated) {
+    sessionsAll[dateKey] = sessions;
+    if (exercises.length) workoutsAll[dateKey] = exercises;
+    writeJSON(GUEST_KEYS.sessions, sessionsAll);
+    writeJSON(GUEST_KEYS.workouts, workoutsAll);
+  }
+
+  return sessions.map((s) => ({
+    id: s.id,
+    name: s.name ?? null,
+    position: s.position ?? 0,
+    durationSeconds: s.durationSeconds ?? 0,
+    createdAt: s.createdAt,
+    exercises: exercises
+      .filter((e) => e.sessionId === s.id)
+      .map(stripSessionId),
+  }));
+}
+
+export function localSaveDay(dateKey, sessions) {
+  const workoutsAll = readJSON(GUEST_KEYS.workouts, {});
+  const sessionsAll = readJSON(GUEST_KEYS.sessions, {});
+  const prev = new Map((sessionsAll[dateKey] ?? []).map((s) => [s.id, s]));
+
+  const sessionRecords = (sessions ?? []).map((s, i) => ({
+    id: s.id,
+    name: s.name?.trim() || null,
+    position: i,
+    // Day-saves never write durations; localAddSessionDuration owns them.
+    durationSeconds: prev.get(s.id)?.durationSeconds ?? 0,
+    createdAt: s.createdAt ?? new Date().toISOString(),
+  }));
+  const exerciseRecords = (sessions ?? []).flatMap((s) =>
+    s.exercises.map((e) => ({ ...e, sessionId: s.id })),
+  );
+
+  if (sessionRecords.length) {
+    sessionsAll[dateKey] = sessionRecords;
+  } else {
+    delete sessionsAll[dateKey];
+  }
+  if (exerciseRecords.length) {
+    workoutsAll[dateKey] = exerciseRecords;
+  } else {
+    delete workoutsAll[dateKey];
+  }
+  writeJSON(GUEST_KEYS.sessions, sessionsAll);
+  writeJSON(GUEST_KEYS.workouts, workoutsAll);
 }
 
 export function localGetDatesWithWorkouts() {
@@ -62,6 +147,20 @@ export function localGetAllExerciseRows() {
   return rows.sort((a, b) =>
     a.date === b.date ? b.position - a.position : b.date.localeCompare(a.date),
   );
+}
+
+// --- Workout sessions ---
+
+export function localAddSessionDuration(dateKey, sessionId, seconds) {
+  const all = readJSON(GUEST_KEYS.sessions, {});
+  const session = (all[dateKey] ?? []).find((s) => s.id === sessionId);
+  if (!session) {
+    console.error("No session found to add duration to", dateKey, sessionId);
+    return;
+  }
+  session.durationSeconds = (session.durationSeconds ?? 0) + seconds;
+  writeJSON(GUEST_KEYS.sessions, all);
+  return session.durationSeconds;
 }
 
 // --- Check-ins ---

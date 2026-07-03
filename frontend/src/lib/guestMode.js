@@ -4,6 +4,7 @@ export const GUEST_KEYS = {
   workouts: "guest:workouts",
   checkins: "guest:checkins",
   templates: "guest:templates",
+  sessions: "guest:sessions",
   seeded: "guest:seeded",
 };
 

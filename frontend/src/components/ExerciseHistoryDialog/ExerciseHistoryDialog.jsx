@@ -7,8 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import { getWorkoutsForDate } from "@/services/workouts";
+import { getDayForDate } from "@/services/workouts";
 import { formatFriendly, fromDateKey, toDateKey } from "@/lib/dates";
+import { formatDuration } from "@/lib/time";
 
 const DayExerciseRow = ({ exercise, highlighted }) => (
   <div
@@ -33,7 +34,7 @@ const DayExerciseRow = ({ exercise, highlighted }) => (
 
 const ExerciseHistory = ({ exercise }) => {
   const [selectedDateKey, setSelectedDateKey] = useState(null);
-  const [dayExercises, setDayExercises] = useState(null);
+  const [daySessions, setDaySessions] = useState(null);
   const [dayError, setDayError] = useState("");
 
   const performedDays = useMemo(
@@ -49,10 +50,10 @@ const ExerciseHistory = ({ exercise }) => {
     if (!date) return;
     const dateKey = toDateKey(date);
     setSelectedDateKey(dateKey);
-    setDayExercises(null);
+    setDaySessions(null);
     setDayError("");
-    getWorkoutsForDate(dateKey)
-      .then(setDayExercises)
+    getDayForDate(dateKey)
+      .then(setDaySessions)
       .catch(() => setDayError("Could not load that day's workout."));
   };
 
@@ -82,16 +83,45 @@ const ExerciseHistory = ({ exercise }) => {
           </p>
           {dayError ? (
             <p className="text-sm text-destructive">{dayError}</p>
-          ) : !dayExercises ? (
+          ) : !daySessions ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
-            dayExercises.map((e) => (
-              <DayExerciseRow
-                key={e.id}
-                exercise={e}
-                highlighted={e.name.trim().toLowerCase() === exercise.key}
-              />
-            ))
+            daySessions
+              // Legacy duration-only sessions still show (as a duration line),
+              // but empty zero-duration sessions add nothing.
+              .filter((s) => s.exercises.length > 0 || s.durationSeconds > 0)
+              .map((session, index, visible) => {
+                // A lone unnamed, untimed session is just "the day" — no header.
+                const showHeader =
+                  visible.length > 1 ||
+                  session.name != null ||
+                  session.durationSeconds > 0;
+                return (
+                  <div key={session.id} className="space-y-2">
+                    {showHeader && (
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {session.name ?? `Session ${index + 1}`}
+                        </p>
+                        {session.durationSeconds > 0 && (
+                          <p className="text-xs text-muted-foreground tabular-nums">
+                            {formatDuration(session.durationSeconds)}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {session.exercises.map((e) => (
+                      <DayExerciseRow
+                        key={e.id}
+                        exercise={e}
+                        highlighted={
+                          e.name.trim().toLowerCase() === exercise.key
+                        }
+                      />
+                    ))}
+                  </div>
+                );
+              })
           )}
         </div>
       )}
