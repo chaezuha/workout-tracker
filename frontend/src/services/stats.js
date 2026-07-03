@@ -1,7 +1,10 @@
 import { subMonths, subYears } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { isGuestMode } from "@/lib/guestMode";
-import { localGetAllExerciseRows } from "@/services/localStore";
+import {
+  localGetAllExerciseRows,
+  localGetAllSessionRows,
+} from "@/services/localStore";
 import { addDays, toDateKey } from "@/lib/dates";
 
 export function estimateOneRepMax(weight, reps) {
@@ -97,4 +100,29 @@ export async function getAllStatsRows() {
     .order("position", { ascending: false });
   if (error) throw error;
   return data;
+}
+
+export function aggregateSessionTotals(sessionRows) {
+  return {
+    count: sessionRows.length,
+    totalSeconds: sessionRows.reduce(
+      (sum, row) => sum + (row.durationSeconds ?? 0),
+      0,
+    ),
+  };
+}
+
+// Session rows share the exercise-row date key ("YYYY-MM-DD"), so
+// filterRowsByRange works on both.
+export async function getAllSessionRows() {
+  if (isGuestMode()) return localGetAllSessionRows();
+  const { data, error } = await supabase
+    .from("workout_sessions")
+    .select("date, duration_seconds")
+    .order("date", { ascending: false });
+  if (error) throw error;
+  return data.map((row) => ({
+    date: row.date,
+    durationSeconds: row.duration_seconds ?? 0,
+  }));
 }

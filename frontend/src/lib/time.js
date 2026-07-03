@@ -11,3 +11,13 @@ export function formatDuration(totalSeconds) {
   }
   return `${minutes}:${pad(secs)}`;
 }
+
+// "4h 32m" / "32m" — for accumulated totals, not ticking timers.
+export function formatDurationCompact(totalSeconds) {
+  const minutes = Math.floor(Math.max(0, totalSeconds) / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  }
+  return `${minutes}m`;
+}

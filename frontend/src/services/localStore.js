@@ -149,6 +149,26 @@ export function localGetAllExerciseRows() {
   );
 }
 
+// Flattened session rows ({ date, durationSeconds }) for stats. Dates with
+// workouts but no session entry (pre-session data whose lazy migration in
+// localGetDayForDate hasn't run yet) count as one zero-duration session.
+export function localGetAllSessionRows() {
+  const sessionsAll = readJSON(GUEST_KEYS.sessions, {});
+  const rows = [];
+  for (const [date, sessions] of Object.entries(sessionsAll)) {
+    for (const s of sessions) {
+      rows.push({ date, durationSeconds: s.durationSeconds ?? 0 });
+    }
+  }
+  const datesWithSessions = new Set(Object.keys(sessionsAll));
+  for (const date of Object.keys(readJSON(GUEST_KEYS.workouts, {}))) {
+    if (!datesWithSessions.has(date)) {
+      rows.push({ date, durationSeconds: 0 });
+    }
+  }
+  return rows;
+}
+
 // --- Workout sessions ---
 
 export function localAddSessionDuration(dateKey, sessionId, seconds) {

@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   RANGE_OPTIONS,
+  aggregateSessionTotals,
   aggregateStats,
   filterRowsByRange,
+  getAllSessionRows,
   getAllStatsRows,
 } from "@/services/stats";
+import { formatDurationCompact } from "@/lib/time";
 import {
   Select,
   SelectContent,
@@ -27,6 +30,7 @@ const SummaryCard = ({ value, label }) => (
 export const StatsPage = () => {
   const { user } = useAuth();
   const [rows, setRows] = useState(null);
+  const [sessionRows, setSessionRows] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [range, setRange] = useState("all");
@@ -35,9 +39,11 @@ export const StatsPage = () => {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    getAllStatsRows()
-      .then((r) => {
-        if (!cancelled) setRows(r);
+    Promise.all([getAllStatsRows(), getAllSessionRows()])
+      .then(([exerciseRows, sessions]) => {
+        if (cancelled) return;
+        setRows(exerciseRows);
+        setSessionRows(sessions);
       })
       .catch(() => {
         if (!cancelled) setError("Could not load your stats.");
@@ -53,6 +59,14 @@ export const StatsPage = () => {
   const stats = useMemo(
     () => (rows ? aggregateStats(filterRowsByRange(rows, range)) : null),
     [rows, range],
+  );
+
+  const sessionTotals = useMemo(
+    () =>
+      sessionRows
+        ? aggregateSessionTotals(filterRowsByRange(sessionRows, range))
+        : null,
+    [sessionRows, range],
   );
 
   const showStats = () => {
@@ -85,6 +99,11 @@ export const StatsPage = () => {
           />
           <SummaryCard value={stats.totals.exercises} label="Exercises" />
           <SummaryCard value={stats.totals.sessions} label="Training days" />
+          <SummaryCard value={sessionTotals?.count ?? 0} label="Sessions" />
+          <SummaryCard
+            value={formatDurationCompact(sessionTotals?.totalSeconds ?? 0)}
+            label="Total time"
+          />
         </div>
         <div className="space-y-3">
           {stats.exercises.map((exercise) => (
