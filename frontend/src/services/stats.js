@@ -45,8 +45,22 @@ export function filterRowsByRange(rows, rangeValue) {
   return rows.filter((row) => row.date >= startKey);
 }
 
+// Reps actually logged via the Reps dialog. Values come from text inputs as
+// strings; entries beyond the planned set count are stale logs from a
+// since-reduced set count and don't count.
+export function loggedReps(row) {
+  const setCount = Number(row.sets);
+  const logged = row.completedReps ?? [];
+  const capped =
+    Number.isFinite(setCount) && setCount > 0
+      ? logged.slice(0, setCount)
+      : logged;
+  return capped.map(Number).filter((r) => Number.isFinite(r) && r > 0);
+}
+
 // Rows must be sorted date desc / position desc so the first casing seen per
 // lowercased name is the latest logged one (same rule as toSuggestions).
+// Rows with no logged reps are preplanned exercises and are excluded.
 export function aggregateStats(rows) {
   const byName = new Map();
   const allDates = new Set();
@@ -54,6 +68,8 @@ export function aggregateStats(rows) {
   for (const row of rows) {
     const name = row.name.trim();
     if (!name) continue;
+    const reps = loggedReps(row);
+    if (!reps.length) continue;
     allDates.add(row.date);
 
     const key = name.toLowerCase();
@@ -64,12 +80,14 @@ export function aggregateStats(rows) {
     }
 
     const weight = row.weight ?? 0;
-    entry.volume += (row.sets ?? 0) * (row.reps ?? 0) * weight;
+    entry.volume += reps.reduce((sum, r) => sum + r, 0) * weight;
     entry.bestWeight = Math.max(entry.bestWeight, weight);
-    entry.bestOneRepMax = Math.max(
-      entry.bestOneRepMax,
-      estimateOneRepMax(weight, row.reps ?? 0),
-    );
+    for (const r of reps) {
+      entry.bestOneRepMax = Math.max(
+        entry.bestOneRepMax,
+        estimateOneRepMax(weight, r),
+      );
+    }
     entry.dates.add(row.date);
   }
 
@@ -83,6 +101,7 @@ export function aggregateStats(rows) {
 
   return {
     exercises,
+    trainedDates: allDates,
     totals: {
       totalVolume: exercises.reduce((sum, e) => sum + e.volume, 0),
       exercises: exercises.length,
@@ -95,16 +114,24 @@ export async function getAllStatsRows() {
   if (isGuestMode()) return localGetAllExerciseRows();
   const { data, error } = await supabase
     .from("exercises")
-    .select("name, weight, sets, reps, date, position")
+    .select("name, weight, sets, reps, completed_reps, date, position")
     .order("date", { ascending: false })
     .order("position", { ascending: false });
   if (error) throw error;
-  return data;
+  return data.map(({ completed_reps, ...row }) => ({
+    ...row,
+    completedReps: completed_reps ?? [],
+  }));
 }
 
-export function aggregateSessionTotals(sessionRows) {
+// A session only counts if it was actually used: the timer ran, or the date
+// has a completed exercise. Preplanned sessions contribute nothing either way
+// since their duration is 0.
+export function aggregateSessionTotals(sessionRows, trainedDates = new Set()) {
   return {
-    count: sessionRows.length,
+    count: sessionRows.filter(
+      (row) => (row.durationSeconds ?? 0) > 0 || trainedDates.has(row.date),
+    ).length,
     totalSeconds: sessionRows.reduce(
       (sum, row) => sum + (row.durationSeconds ?? 0),
       0,

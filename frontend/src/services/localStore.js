@@ -148,6 +148,7 @@ export function localGetAllExerciseRows() {
         weight: e.weight === "" || e.weight == null ? null : Number(e.weight),
         sets: Number(e.sets),
         reps: Number(e.reps),
+        completedReps: e.completedReps ?? [],
         date,
         position,
       });

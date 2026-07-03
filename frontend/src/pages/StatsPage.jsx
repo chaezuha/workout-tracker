@@ -63,10 +63,13 @@ export const StatsPage = () => {
 
   const sessionTotals = useMemo(
     () =>
-      sessionRows
-        ? aggregateSessionTotals(filterRowsByRange(sessionRows, range))
+      sessionRows && stats
+        ? aggregateSessionTotals(
+            filterRowsByRange(sessionRows, range),
+            stats.trainedDates,
+          )
         : null,
-    [sessionRows, range],
+    [sessionRows, stats, range],
   );
 
   const showStats = () => {
@@ -86,7 +89,7 @@ export const StatsPage = () => {
     if (stats.exercises.length === 0) {
       return (
         <p className="text-sm text-muted-foreground">
-          No workouts in this range.
+          No completed workouts in this range — log your reps to see stats.
         </p>
       );
     }
