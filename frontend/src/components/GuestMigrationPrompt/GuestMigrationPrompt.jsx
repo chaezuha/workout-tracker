@@ -15,6 +15,7 @@ import {
   hasMigratableGuestData,
   migrateGuestDataToAccount,
 } from "@/services/guestMigration";
+import { hydrate } from "@/services/sync";
 
 // Offers to import leftover guest-mode data into the account after sign-in.
 // Mounted in AppLayout; renders nothing for guests or when there is nothing
@@ -38,6 +39,8 @@ export const GuestMigrationPrompt = () => {
     setError(null);
     try {
       setCounts(await migrateGuestDataToAccount());
+      // Pull the migrated rows into the account's offline mirror.
+      await hydrate();
       setStatus("done");
     } catch (err) {
       setError(err);

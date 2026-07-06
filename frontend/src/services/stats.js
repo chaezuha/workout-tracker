@@ -5,6 +5,7 @@ import {
   localGetAllExerciseRows,
   localGetAllSessionRows,
 } from "@/services/localStore";
+import { cacheStore } from "@/services/cacheStore";
 import { addDays, toDateKey } from "@/lib/dates";
 
 export function estimateOneRepMax(weight, reps) {
@@ -112,16 +113,21 @@ export function aggregateStats(rows) {
 
 export async function getAllStatsRows() {
   if (isGuestMode()) return localGetAllExerciseRows();
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("name, weight, sets, reps, completed_reps, date, position")
-    .order("date", { ascending: false })
-    .order("position", { ascending: false });
-  if (error) throw error;
-  return data.map(({ completed_reps, ...row }) => ({
-    ...row,
-    completedReps: completed_reps ?? [],
-  }));
+  try {
+    const { data, error } = await supabase
+      .from("exercises")
+      .select("name, weight, sets, reps, completed_reps, date, position")
+      .order("date", { ascending: false })
+      .order("position", { ascending: false });
+    if (error) throw error;
+    return data.map(({ completed_reps, ...row }) => ({
+      ...row,
+      completedReps: completed_reps ?? [],
+    }));
+  } catch (err) {
+    console.warn("Serving stats from local cache", err?.message ?? err);
+    return cacheStore.getAllExerciseRows();
+  }
 }
 
 // A session only counts if it was actually used: the timer ran, or the date
@@ -143,13 +149,18 @@ export function aggregateSessionTotals(sessionRows, trainedDates = new Set()) {
 // filterRowsByRange works on both.
 export async function getAllSessionRows() {
   if (isGuestMode()) return localGetAllSessionRows();
-  const { data, error } = await supabase
-    .from("workout_sessions")
-    .select("date, duration_seconds")
-    .order("date", { ascending: false });
-  if (error) throw error;
-  return data.map((row) => ({
-    date: row.date,
-    durationSeconds: row.duration_seconds ?? 0,
-  }));
+  try {
+    const { data, error } = await supabase
+      .from("workout_sessions")
+      .select("date, duration_seconds")
+      .order("date", { ascending: false });
+    if (error) throw error;
+    return data.map((row) => ({
+      date: row.date,
+      durationSeconds: row.duration_seconds ?? 0,
+    }));
+  } catch (err) {
+    console.warn("Serving session stats from local cache", err?.message ?? err);
+    return cacheStore.getAllSessionRows();
+  }
 }
