@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -5,7 +6,9 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import { Toaster, toast } from "sonner";
 import { NavBar } from "./components/NavBar/NavBar";
+import { ReloadPrompt } from "./components/ReloadPrompt/ReloadPrompt";
 import { GuestBanner } from "./components/GuestBanner/GuestBanner";
 import { GuestMigrationPrompt } from "./components/GuestMigrationPrompt/GuestMigrationPrompt";
 import { WorkoutPage } from "./pages/WorkoutPage";
@@ -35,6 +38,15 @@ const AuthPage = () => {
 const App = () => {
   const { loading } = useAuth();
 
+  // services/sync.js announces a permanently dropped op this way so the
+  // service layer stays UI-free.
+  useEffect(() => {
+    const onDropped = () =>
+      toast.error("A change couldn't be synced and was discarded.");
+    window.addEventListener("sync:op-dropped", onDropped);
+    return () => window.removeEventListener("sync:op-dropped", onDropped);
+  }, []);
+
   if (loading) {
     return null;
   }
@@ -51,6 +63,8 @@ const App = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      <ReloadPrompt />
+      <Toaster position="bottom-center" />
     </BrowserRouter>
   );
 };

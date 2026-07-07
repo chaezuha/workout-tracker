@@ -13,7 +13,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt": a waiting SW is surfaced by ReloadPrompt.jsx instead of
+      // silently activating on the next visit.
+      registerType: "prompt",
       manifest: {
         name: "Workout Tracker",
         short_name: "Workouts",

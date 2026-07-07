@@ -1,6 +1,9 @@
 import { Link, NavLink } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSyncStatus } from "@/hooks/useSyncStatus";
 
 const links = [
   { to: "/", label: "Workout" },
@@ -9,8 +12,31 @@ const links = [
   { to: "/calculators", label: "Calculators" },
 ];
 
+// Only rendered when something needs attention; when online and synced the
+// nav stays clean.
+const SyncBadge = ({ pending, online }) => {
+  if (online && pending === 0) return null;
+  const label = !online
+    ? pending > 0
+      ? `Offline — ${pending} pending`
+      : "Offline"
+    : `${pending} pending`;
+  return (
+    <Badge variant="outline" className="whitespace-nowrap">
+      {label}
+    </Badge>
+  );
+};
+
 export const NavBar = () => {
   const { user, isGuest, signOut } = useAuth();
+  const { pending, online } = useSyncStatus();
+
+  const signOutButton = (
+    <Button type="button" variant="outline" size="sm" onClick={pending > 0 ? undefined : signOut}>
+      Sign out
+    </Button>
+  );
 
   return (
     <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
@@ -47,17 +73,24 @@ export const NavBar = () => {
             </>
           ) : (
             <>
+              <SyncBadge pending={pending} online={online} />
               <span className="hidden max-w-[16ch] truncate text-sm text-muted-foreground sm:inline">
                 {user.email}
               </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={signOut}
-              >
-                Sign out
-              </Button>
+              {pending > 0 ? (
+                <ConfirmDialog
+                  trigger={signOutButton}
+                  title="Sign out with unsynced changes?"
+                  description={`${pending} ${
+                    pending === 1 ? "change hasn't" : "changes haven't"
+                  } reached your account yet. They only sync if this device reconnects — signing out now risks losing them.`}
+                  confirmLabel="Sign out"
+                  confirmVariant="destructive"
+                  onConfirm={signOut}
+                />
+              ) : (
+                signOutButton
+              )}
             </>
           )}
         </div>

@@ -141,6 +141,11 @@ async function flushPass() {
       if (!isNetworkError(err) && outbox.bumpAttempts(op.id) >= MAX_ATTEMPTS) {
         console.error("Dropping unsyncable change after repeated failures", op, err);
         outbox.drop(op.id);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("sync:op-dropped", { detail: { type: op.type } }),
+          );
+        }
         continue;
       }
       console.warn("Sync push failed; will retry", op.type, err?.message ?? err);
