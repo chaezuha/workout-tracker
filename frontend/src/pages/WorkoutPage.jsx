@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
 import { SessionCard } from "@/components/SessionCard/SessionCard";
@@ -9,6 +11,8 @@ import { AddExerciseDialog } from "@/components/AddExerciseDialog/AddExerciseDia
 import { toDateKey } from "@/lib/dates";
 import { getDayForDate, saveDayForDate } from "@/services/workouts";
 import { addSessionDuration } from "@/services/sessions";
+import { getAllStatsRows } from "@/services/stats";
+import { buildPrBaselines, detectPrs, recordResult } from "@/services/prs";
 import { getWorkoutTimer } from "@/services/timer";
 import { useWorkoutTimer } from "@/hooks/useWorkoutTimer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,9 +72,46 @@ export const WorkoutPage = () => {
   const timer = useWorkoutTimer({ onSaveDuration });
   const adoptSession = timer.adoptSession; // stable
 
+  // PR baselines are fetched once per viewed day, then mutated: today's
+  // pre-edit results and every detected PR fold in via recordResult, so a
+  // reopened dialog can't re-celebrate but a second heavier set can.
+  const baselinesRef = useRef(null);
+  const [celebratingId, setCelebratingId] = useState(null);
+  const celebrateTimeoutRef = useRef(null);
+
+  const checkForPrs = async (exercise, prevSessions) => {
+    try {
+      baselinesRef.current ??= getAllStatsRows().then((rows) =>
+        buildPrBaselines(rows, dateKey),
+      );
+      const baselines = await baselinesRef.current;
+      for (const s of prevSessions) {
+        for (const e of s.exercises) recordResult(baselines, e);
+      }
+      const prs = detectPrs(exercise, baselines);
+      recordResult(baselines, exercise);
+      if (!prs.length) return;
+      const parts = prs.map((pr) =>
+        pr.type === "weight"
+          ? `${pr.value} lb (was ${pr.previous})`
+          : `est. 1RM ${Math.round(pr.value)} lb (was ${Math.round(pr.previous)})`,
+      );
+      toast.success(`New ${exercise.name} PR — ${parts.join(", ")}`);
+      setCelebratingId(exercise.id);
+      clearTimeout(celebrateTimeoutRef.current);
+      celebrateTimeoutRef.current = setTimeout(
+        () => setCelebratingId(null),
+        1500,
+      );
+    } catch {
+      // Best-effort: a failed history fetch should never block logging reps.
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
+    baselinesRef.current = null; // baselines are relative to the viewed day
     getDayForDate(dateKey).then((items) => {
       if (cancelled) return;
       let day = items;
@@ -153,6 +194,14 @@ export const WorkoutPage = () => {
   };
 
   const editExercise = (sessionId, exerciseId, data) => {
+    // Reps saves and weight edits can both change the logged result (a weight
+    // bump after logging reps is still a new best); other edits can't.
+    if (data.completedReps !== undefined || data.weight !== undefined) {
+      const prev = sessions
+        .find((s) => s.id === sessionId)
+        ?.exercises.find((e) => e.id === exerciseId);
+      if (prev) checkForPrs({ ...prev, ...data }, sessions);
+    }
     setSessions((prev) =>
       prev.map((s) =>
         s.id === sessionId
@@ -214,25 +263,29 @@ export const WorkoutPage = () => {
         )}
         {sessions.length > 0 ? (
           <>
-            {sessions.map((session, index) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                index={index}
-                isToday={isToday}
-                timer={timer}
-                onStartTimer={timer.start}
-                onPauseTimer={timer.pause}
-                onResumeTimer={timer.resume}
-                onStopTimer={timer.stop}
-                onRename={renameSession}
-                onDelete={deleteSession}
-                onAddExercise={addExercise}
-                onEditExercise={editExercise}
-                onDeleteExercise={deleteExercise}
-                onDragEnd={handleDragEnd}
-              />
-            ))}
+            <AnimatePresence initial={false}>
+              {sessions.map((session, index) => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  index={index}
+                  isToday={isToday}
+                  dateKey={dateKey}
+                  celebratingId={celebratingId}
+                  timer={timer}
+                  onStartTimer={timer.start}
+                  onPauseTimer={timer.pause}
+                  onResumeTimer={timer.resume}
+                  onStopTimer={timer.stop}
+                  onRename={renameSession}
+                  onDelete={deleteSession}
+                  onAddExercise={addExercise}
+                  onEditExercise={editExercise}
+                  onDeleteExercise={deleteExercise}
+                  onDragEnd={handleDragEnd}
+                />
+              ))}
+            </AnimatePresence>
             <Button
               type="button"
               variant="outline"

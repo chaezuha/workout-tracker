@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <!-- Applies the stored theme before first paint so a dark-mode reload
+         never flashes white. Keep in sync with src/lib/theme.js. -->
+    <script>
+      (function () {
+        var stored = localStorage.getItem("theme");
+        var dark =
+          stored === "dark" || stored === "light"
+            ? stored === "dark"
+            : matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
     <!-- iOS ignores manifest icons; it needs an explicit apple-touch-icon. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <title>Workout Tracker</title>

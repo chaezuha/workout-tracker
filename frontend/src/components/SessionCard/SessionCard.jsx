@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "motion/react";
 import {
   DndContext,
   closestCorners,
@@ -14,7 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Column } from "@/components/Column/Column";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog/AddExerciseDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
+import { ShareSessionButton } from "@/components/ShareSummary/ShareSessionButton";
 import { formatDuration } from "@/lib/time";
+import { loggedReps } from "@/services/stats";
 
 // One session's card: name (renamable), accumulated timer, timer controls
 // (today only — one timer runs at a time across all sessions), and its own
@@ -24,6 +27,8 @@ export const SessionCard = ({
   session,
   index,
   isToday,
+  dateKey,
+  celebratingId,
   timer,
   onStartTimer,
   onPauseTimer,
@@ -59,8 +64,19 @@ export const SessionCard = ({
     setEditingName(false);
   };
 
+  const hasLoggedReps = session.exercises.some(
+    (e) => loggedReps(e).length > 0,
+  );
+
   return (
-    <div className="rounded-xl border p-4 space-y-4 shadow-xs">
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="overflow-hidden"
+    >
+      <div className="rounded-xl border p-4 space-y-4 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
         {editingName ? (
           <form
@@ -118,6 +134,9 @@ export const SessionCard = ({
               {formatDuration(liveDuration)}
               {isActive && timer.status === "paused" && " · paused"}
             </span>
+          )}
+          {hasLoggedReps && (
+            <ShareSessionButton session={session} dateKey={dateKey} />
           )}
           <ConfirmDialog
             trigger={
@@ -202,6 +221,7 @@ export const SessionCard = ({
         >
           <Column
             exercises={session.exercises}
+            celebratingId={celebratingId}
             onDelete={(exerciseId) => onDeleteExercise(session.id, exerciseId)}
             onEdit={(exerciseId, data) =>
               onEditExercise(session.id, exerciseId, data)
@@ -213,7 +233,8 @@ export const SessionCard = ({
           No exercises yet — add one below.
         </p>
       )}
-      <AddExerciseDialog onAdd={(data) => onAddExercise(session.id, data)} />
-    </div>
+        <AddExerciseDialog onAdd={(data) => onAddExercise(session.id, data)} />
+      </div>
+    </motion.div>
   );
 };

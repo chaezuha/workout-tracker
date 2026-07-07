@@ -1,9 +1,11 @@
 import { Link, NavLink } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { useTheme } from "@/hooks/useTheme";
 
 const links = [
   { to: "/", label: "Workout" },
@@ -31,6 +33,7 @@ const SyncBadge = ({ pending, online }) => {
 export const NavBar = () => {
   const { user, isGuest, signOut } = useAuth();
   const { pending, online } = useSyncStatus();
+  const { resolvedTheme, toggle } = useTheme();
 
   const signOutButton = (
     <Button type="button" variant="outline" size="sm" onClick={pending > 0 ? undefined : signOut}>
@@ -59,6 +62,19 @@ export const NavBar = () => {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label={
+              resolvedTheme === "dark"
+                ? "Switch to light mode"
+                : "Switch to dark mode"
+            }
+          >
+            {resolvedTheme === "dark" ? <Sun /> : <Moon />}
+          </Button>
           {isGuest ? (
             <>
               <span className="hidden text-sm text-muted-foreground sm:inline">

@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExerciseHistoryDialog } from "@/components/ExerciseHistoryDialog/ExerciseHistoryDialog";
+import { HistoryCsvControls } from "@/components/HistoryCsv/HistoryCsvControls";
 
 const SummaryCard = ({ value, label }) => (
   <div className="rounded-xl border bg-muted/50 p-4">
@@ -35,6 +36,7 @@ export const StatsPage = () => {
   const [error, setError] = useState("");
   const [range, setRange] = useState("all");
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -54,7 +56,7 @@ export const StatsPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, reloadKey]);
 
   const stats = useMemo(
     () => (rows ? aggregateStats(filterRowsByRange(rows, range)) : null),
@@ -154,20 +156,25 @@ export const StatsPage = () => {
             Your training totals and best lifts.
           </p>
         </div>
-        {showRangeSelect && (
-          <Select value={range} onValueChange={setRange}>
-            <SelectTrigger aria-label="Time range">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {RANGE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <HistoryCsvControls
+            onImported={() => setReloadKey((k) => k + 1)}
+          />
+          {showRangeSelect && (
+            <Select value={range} onValueChange={setRange}>
+              <SelectTrigger aria-label="Time range">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {RANGE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
       {showStats()}
       <ExerciseHistoryDialog

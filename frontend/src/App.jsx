@@ -6,6 +6,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import { MotionConfig } from "motion/react";
 import { Toaster, toast } from "sonner";
 import { NavBar } from "./components/NavBar/NavBar";
 import { ReloadPrompt } from "./components/ReloadPrompt/ReloadPrompt";
@@ -52,20 +53,22 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/auth" element={<AuthPage />} />
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<WorkoutPage />} />
-          <Route path="/checkin" element={<CheckinPage />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/calculators" element={<CalculatorsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-      <ReloadPrompt />
-      <Toaster position="bottom-center" />
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/auth" element={<AuthPage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<WorkoutPage />} />
+            <Route path="/checkin" element={<CheckinPage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/calculators" element={<CalculatorsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+        <ReloadPrompt />
+        <Toaster position="bottom-center" />
+      </BrowserRouter>
+    </MotionConfig>
   );
 };
 

@@ -150,6 +150,22 @@ export async function pushDayToSupabase(dateKey, sessions, userId) {
   if (delSesErr) throw delSesErr;
 }
 
+// Full history as [{ date, sessions }], for CSV export. Goes through the
+// day-level readers so guest/cache/dirty-date handling applies unchanged;
+// chunked to bound concurrent Supabase round trips. If exports ever feel
+// slow on large signed-in histories, replace with one bulk two-table query.
+export async function getAllDays() {
+  const dates = (await getDatesWithWorkouts()).sort();
+  const days = [];
+  const CHUNK = 5;
+  for (let i = 0; i < dates.length; i += CHUNK) {
+    const chunk = dates.slice(i, i + CHUNK);
+    const results = await Promise.all(chunk.map((d) => getDayForDate(d)));
+    chunk.forEach((date, j) => days.push({ date, sessions: results[j] }));
+  }
+  return days;
+}
+
 export async function getDatesWithWorkouts() {
   if (isGuestMode()) return localGetDatesWithWorkouts();
   const dirty = dirtyDates();
