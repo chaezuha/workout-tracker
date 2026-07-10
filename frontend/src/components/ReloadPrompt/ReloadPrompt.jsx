@@ -13,7 +13,7 @@ export const ReloadPrompt = () => {
   if (!needRefresh) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg border bg-background p-4 shadow-lg">
+    <div className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 flex items-center gap-3 rounded-lg border bg-background p-4 shadow-lg sm:inset-x-auto sm:right-4">
       <p className="text-sm">A new version is available.</p>
       <Button size="sm" onClick={() => updateServiceWorker(true)}>
         Reload

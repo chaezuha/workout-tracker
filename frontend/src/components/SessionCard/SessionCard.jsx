@@ -5,7 +5,7 @@ import {
   closestCorners,
   useSensor,
   useSensors,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   KeyboardSensor,
 } from "@dnd-kit/core";
@@ -51,9 +51,14 @@ export const SessionCard = ({
     timer.status !== "idle" && timer.activeSessionId !== session.id;
   const liveDuration = session.durationSeconds + (isActive ? timer.elapsed : 0);
 
+  // Mouse/touch split (not PointerSensor): a touch would trip the pointer
+  // sensor's distance constraint before the touch delay elapses. The delay
+  // lets touches scroll the page; moving past the tolerance cancels the drag.
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),

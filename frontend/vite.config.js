@@ -39,6 +39,18 @@ export default defineConfig({
         // woff2 must be listed explicitly: Geist ships via @fontsource and
         // the default glob would leave fonts uncached offline.
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        // env.js is regenerated at container startup (runtime config);
+        // precaching it would pin the empty build-time placeholder forever.
+        globIgnores: ["**/env.js"],
+        runtimeCaching: [
+          {
+            // NetworkFirst: a changed .env takes effect on the next online
+            // load, while offline PWA launches still get the last-seen copy.
+            urlPattern: ({ url }) => url.pathname === "/env.js",
+            handler: "NetworkFirst",
+            options: { cacheName: "runtime-config" },
+          },
+        ],
         navigateFallback: "/index.html",
         // Supabase responses are never cached: the localStorage mirror is
         // the offline data layer, and a SW cache would be a second, staler

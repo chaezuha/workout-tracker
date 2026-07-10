@@ -62,6 +62,8 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
           <Label>Set {i + 1}</Label>
           <Input
             type="number"
+            inputMode="numeric"
+            enterKeyHint="done"
             placeholder="Input reps"
             value={inputReps[i] || ""}
             onChange={(e) => handleRepChange(i, e.target.value)}
@@ -85,7 +87,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={isDragging ? "relative z-10 touch-none" : "touch-none"}
+      className={isDragging ? "relative z-10" : undefined}
     >
       <motion.div
         initial={{ opacity: 0, height: 0 }}
@@ -107,9 +109,13 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
             isDragging ? "opacity-90 shadow-lg ring-2 ring-ring/40" : ""
           }`}
         >
+      {/* touch-none lives on the handle (not the row) so the browser can't
+          claim the gesture as a scroll mid-drag; py-2 -my-2 grows the hit box
+          without changing the row height. */}
       <div
         {...listeners}
-        className="text-2xl px-2 cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground"
+        aria-label="Drag to reorder"
+        className="touch-none text-2xl px-2 py-2 -my-2 cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground"
       >
         ⠿
       </div>

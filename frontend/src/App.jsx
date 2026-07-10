@@ -66,7 +66,10 @@ const App = () => {
           </Route>
         </Routes>
         <ReloadPrompt />
-        <Toaster position="bottom-center" />
+        <Toaster
+          position="bottom-center"
+          mobileOffset={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+        />
       </BrowserRouter>
     </MotionConfig>
   );

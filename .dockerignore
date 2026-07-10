@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+supabase
+*.md
+LICENSE

@@ -85,6 +85,7 @@ export const AddExerciseDialog = ({ onAdd }) => {
               <Input
                 id="add-weight"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="0.5"
                 value={weight}
@@ -96,6 +97,7 @@ export const AddExerciseDialog = ({ onAdd }) => {
               <Input
                 id="add-sets"
                 type="number"
+                inputMode="numeric"
                 min="1"
                 value={sets}
                 onChange={(e) => setSets(e.target.value)}
@@ -107,6 +109,7 @@ export const AddExerciseDialog = ({ onAdd }) => {
               <Input
                 id="add-reps"
                 type="number"
+                inputMode="numeric"
                 min="1"
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}

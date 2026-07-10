@@ -65,6 +65,7 @@ export const BmiCalculator = () => {
           <Input
             id="bmi-weight"
             type="number"
+            inputMode="decimal"
             min="0"
             step="any"
             value={weight}
@@ -78,6 +79,7 @@ export const BmiCalculator = () => {
             <Input
               id="bmi-height-cm"
               type="number"
+              inputMode="decimal"
               min="0"
               step="any"
               value={heightCm}
@@ -92,6 +94,7 @@ export const BmiCalculator = () => {
               <Input
                 id="bmi-height-ft"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={heightFt}
                 onChange={(e) => setHeightFt(e.target.value)}
@@ -103,6 +106,7 @@ export const BmiCalculator = () => {
               <Input
                 id="bmi-height-in"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 max="11"
                 step="any"

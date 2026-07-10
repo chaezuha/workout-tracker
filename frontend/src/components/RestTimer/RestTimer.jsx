@@ -49,6 +49,7 @@ export const RestTimer = () => {
             ))}
             <Input
               type="number"
+              inputMode="numeric"
               min="1"
               placeholder="Custom (s)"
               className="w-32"

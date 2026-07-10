@@ -79,6 +79,7 @@ export const TdeeCalculator = () => {
           <Input
             id="tdee-age"
             type="number"
+            inputMode="numeric"
             min="1"
             value={age}
             onChange={(e) => setAge(e.target.value)}
@@ -92,6 +93,7 @@ export const TdeeCalculator = () => {
           <Input
             id="tdee-weight"
             type="number"
+            inputMode="decimal"
             min="0"
             step="any"
             value={weight}
@@ -105,6 +107,7 @@ export const TdeeCalculator = () => {
             <Input
               id="tdee-height-cm"
               type="number"
+              inputMode="decimal"
               min="0"
               step="any"
               value={heightCm}
@@ -119,6 +122,7 @@ export const TdeeCalculator = () => {
               <Input
                 id="tdee-height-ft"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={heightFt}
                 onChange={(e) => setHeightFt(e.target.value)}
@@ -130,6 +134,7 @@ export const TdeeCalculator = () => {
               <Input
                 id="tdee-height-in"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 max="11"
                 step="any"

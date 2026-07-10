@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
     <!-- Applies the stored theme before first paint so a dark-mode reload
@@ -18,6 +18,10 @@
         document.documentElement.classList.toggle("dark", dark);
       })();
     </script>
+    <!-- Runtime config (Docker overwrites this file at container start). A
+         classic script so it executes before the deferred module bundle
+         reads window.__APP_CONFIG__. -->
+    <script src="/env.js"></script>
     <!-- iOS ignores manifest icons; it needs an explicit apple-touch-icon. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <title>Workout Tracker</title>

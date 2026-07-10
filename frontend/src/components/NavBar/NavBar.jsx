@@ -42,7 +42,7 @@ export const NavBar = () => {
   );
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-3">
         <nav className="flex gap-1">
           {links.map(({ to, label }) => (
@@ -50,7 +50,7 @@ export const NavBar = () => {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                `whitespace-nowrap rounded-full px-3 py-1.5 pointer-coarse:py-2.5 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground"

@@ -136,6 +136,7 @@ export const TemplateEditor = ({
               <Input
                 id={`ex-weight-${row.key}`}
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="0.5"
                 value={row.weight}
@@ -147,6 +148,7 @@ export const TemplateEditor = ({
               <Input
                 id={`ex-sets-${row.key}`}
                 type="number"
+                inputMode="numeric"
                 min="1"
                 value={row.sets}
                 onChange={(e) => updateRow(row.key, "sets", e.target.value)}
@@ -158,6 +160,7 @@ export const TemplateEditor = ({
               <Input
                 id={`ex-reps-${row.key}`}
                 type="number"
+                inputMode="numeric"
                 min="1"
                 value={row.reps}
                 onChange={(e) => updateRow(row.key, "reps", e.target.value)}

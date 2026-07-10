@@ -198,6 +198,7 @@ export const CalculatorsPage = () => {
               <Input
                 id="plate-barbell-weight"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 value={plateBarbellWeight}
                 onChange={handlePlateBarbellWeightChange}
@@ -217,6 +218,7 @@ export const CalculatorsPage = () => {
                       <Input
                         id={`plate-${w}`}
                         type="number"
+                        inputMode="numeric"
                         min="0"
                         value={plateCounts[i]}
                         onChange={handlePlateCountChange(i)}
@@ -239,6 +241,7 @@ export const CalculatorsPage = () => {
               <Input
                 id="desired-weight"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 value={desiredWeight}
                 onChange={handleDesiredWeightChange}
@@ -250,6 +253,7 @@ export const CalculatorsPage = () => {
               <Input
                 id="barbell-weight"
                 type="number"
+                inputMode="decimal"
                 min="0"
                 value={barbellWeight}
                 onChange={handleBarbellWeightChange}

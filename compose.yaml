@@ -1,0 +1,16 @@
+services:
+  workout-tracker:
+    image: ghcr.io/chaezuha/workout-tracker:latest
+    # `docker compose up -d` doubles as the update command.
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:80"
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL in the .env file next to compose.yaml}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?Set SUPABASE_ANON_KEY in the .env file next to compose.yaml}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
