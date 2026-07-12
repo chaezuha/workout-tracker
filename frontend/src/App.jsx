@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -11,20 +11,37 @@ import { Toaster, toast } from "sonner";
 import { NavBar } from "./components/NavBar/NavBar";
 import { ReloadPrompt } from "./components/ReloadPrompt/ReloadPrompt";
 import { GuestBanner } from "./components/GuestBanner/GuestBanner";
+import { StorageWarningBanner } from "./components/StorageWarningBanner/StorageWarningBanner";
 import { GuestMigrationPrompt } from "./components/GuestMigrationPrompt/GuestMigrationPrompt";
-import { WorkoutPage } from "./pages/WorkoutPage";
-import { CheckinPage } from "./pages/CheckinPage";
-import { CalculatorsPage } from "./pages/CalculatorsPage";
-import { StatsPage } from "./pages/StatsPage";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthForm } from "@/components/Auth/AuthForm";
+
+// Route-level code splitting: each page loads on first visit instead of
+// riding in the main chunk.
+const WorkoutPage = lazy(() =>
+  import("./pages/WorkoutPage").then((m) => ({ default: m.WorkoutPage })),
+);
+const CheckinPage = lazy(() =>
+  import("./pages/CheckinPage").then((m) => ({ default: m.CheckinPage })),
+);
+const CalculatorsPage = lazy(() =>
+  import("./pages/CalculatorsPage").then((m) => ({
+    default: m.CalculatorsPage,
+  })),
+);
+const StatsPage = lazy(() =>
+  import("./pages/StatsPage").then((m) => ({ default: m.StatsPage })),
+);
 
 const AppLayout = () => (
   <>
     <NavBar />
     <GuestBanner />
+    <StorageWarningBanner />
     <GuestMigrationPrompt />
-    <Outlet />
+    <Suspense fallback={null}>
+      <Outlet />
+    </Suspense>
   </>
 );
 

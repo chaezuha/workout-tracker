@@ -39,7 +39,11 @@ vi.mock("@/lib/supabase", () => {
   };
 });
 
-import { getDayForDate, saveDayForDate } from "./workouts";
+import {
+  getDatesWithWorkouts,
+  getDayForDate,
+  saveDayForDate,
+} from "./workouts";
 import { cacheStore } from "./cacheStore";
 import * as outbox from "./outbox";
 
@@ -94,6 +98,16 @@ describe("getDayForDate (signed in)", () => {
     expect(day).toHaveLength(1);
     expect(day[0].name).toBe("Push");
     expect(day[0].exercises[0].name).toBe("Bench Press");
+  });
+
+  it("includes dates that only have a session row (no exercises)", async () => {
+    h.mode = "online";
+    h.sessionRows = [{ date: "2026-07-05" }]; // timer-only day
+    h.exerciseRows = [{ date: "2026-07-04" }];
+
+    const dates = await getDatesWithWorkouts();
+
+    expect(dates.sort()).toEqual(["2026-07-04", "2026-07-05"]);
   });
 
   it("serves the mirror for a dirty date even when the server has stale data", async () => {

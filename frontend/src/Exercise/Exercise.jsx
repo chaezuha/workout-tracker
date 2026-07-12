@@ -44,8 +44,15 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
 
   const loggedCount = loggedReps({ sets, completedReps }).length;
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const style = {
     transition,
@@ -86,7 +93,6 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
       className={isDragging ? "relative z-10" : undefined}
     >
       <motion.div
@@ -111,14 +117,19 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
         >
       {/* touch-none lives on the handle (not the row) so the browser can't
           claim the gesture as a scroll mid-drag; py-2 -my-2 grows the hit box
-          without changing the row height. */}
-      <div
+          without changing the row height. attributes + listeners + the
+          activator ref all sit on this one focusable button so keyboard
+          reordering (tab to handle, space/enter, arrows) works. */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
-        className="touch-none text-2xl px-2 py-2 -my-2 cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground"
+        className="touch-none text-2xl px-2 py-2 -my-2 cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground rounded-md focus-visible:outline-2 focus-visible:outline-ring"
       >
         ⠿
-      </div>
+      </button>
       <div className="min-w-0 space-y-1">
         <div className="font-medium">{name}</div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -192,19 +203,43 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
             <FieldGroup>
               <Field>
                 <Label htmlFor="name-1">Name</Label>
-                <Input id="name-1" name="name" defaultValue={name} />
+                <Input id="name-1" name="name" defaultValue={name} required />
               </Field>
               <Field>
                 <Label htmlFor="weight-1">Weight</Label>
-                <Input id="weight-1" name="weight" defaultValue={weight} />
+                <Input
+                  id="weight-1"
+                  name="weight"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.5"
+                  defaultValue={weight}
+                />
               </Field>
               <Field>
                 <Label htmlFor="set-1">Sets</Label>
-                <Input id="set-1" name="sets" defaultValue={sets} />
+                <Input
+                  id="set-1"
+                  name="sets"
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  defaultValue={sets}
+                  required
+                />
               </Field>
               <Field>
                 <Label htmlFor="rep-1">Reps</Label>
-                <Input id="rep-1" name="reps" defaultValue={reps} />
+                <Input
+                  id="rep-1"
+                  name="reps"
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  defaultValue={reps}
+                  required
+                />
               </Field>
               <Field>
                 <Label htmlFor="notes-1">Notes</Label>

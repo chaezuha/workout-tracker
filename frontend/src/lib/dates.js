@@ -10,6 +10,14 @@ export function fromDateKey(key) {
   return new Date(year, month - 1, day);
 }
 
+// True only for a "YYYY-MM-DD" key naming a real calendar date: the shape
+// check alone would accept "2026-99-99", which Date would silently roll over,
+// so round-trip through Date and require the key to survive unchanged.
+export function isValidDateKey(key) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+  return toDateKey(fromDateKey(key)) === key;
+}
+
 export function addDays(date, n) {
   const copy = new Date(date);
   copy.setDate(copy.getDate() + n);

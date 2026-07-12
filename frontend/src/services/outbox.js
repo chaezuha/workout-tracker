@@ -1,4 +1,5 @@
 import { OUTBOX_KEY } from "@/lib/syncKeys";
+import { reportStorageWriteFailure } from "@/lib/storageEvents";
 
 // Persisted FIFO queue of the signed-in user's pending Supabase writes. Ops
 // reference data ("day X changed"), not payloads: services/sync.js derives
@@ -25,6 +26,7 @@ function write(ops, { silent = false } = {}) {
     localStorage.setItem(OUTBOX_KEY, JSON.stringify(ops));
   } catch (err) {
     console.error("Failed to write sync outbox", err);
+    reportStorageWriteFailure();
   }
   if (!silent) listeners.forEach((fn) => fn());
 }

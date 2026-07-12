@@ -200,6 +200,37 @@ export function hydrate() {
 }
 
 async function doHydrate() {
+  // The server snapshot is only as fresh as the moment the reads are issued.
+  // Any date/template/check-in with an op pending at any point between now
+  // and replaceAll must keep its local state — including ops that are
+  // enqueued *and flushed* while the reads are in flight (the snapshot
+  // predates their push, so adopting it would clobber the newer mirror).
+  // Every enqueue notifies subscribers synchronously, so accumulating on
+  // each notification catches ops no matter when they complete.
+  const preserveDates = outbox.dirtyDates();
+  const preserveTemplateIds = outbox.pendingTemplateIds();
+  const checkinOverlays = new Map();
+  const capture = () => {
+    for (const d of outbox.dirtyDates()) preserveDates.add(d);
+    for (const id of outbox.pendingTemplateIds()) preserveTemplateIds.add(id);
+    for (const { dateKey, present } of outbox.pendingCheckins()) {
+      checkinOverlays.set(dateKey, present);
+    }
+  };
+  capture();
+  const unsubscribe = outbox.subscribe(capture);
+  try {
+    await doHydrateReads({ preserveDates, preserveTemplateIds, checkinOverlays });
+  } finally {
+    unsubscribe();
+  }
+}
+
+async function doHydrateReads({
+  preserveDates,
+  preserveTemplateIds,
+  checkinOverlays,
+}) {
   const { data, error } = await supabase.auth.getSession();
   if (error || !data?.session?.user) return;
 
@@ -248,9 +279,10 @@ async function doHydrate() {
     session.exercises.push(rowToExercise(row));
   }
 
-  // Pending check-in toggles overlay the server list.
+  // Check-in toggles pending or flushed since the reads were issued overlay
+  // the server list.
   let checkins = checkinsRes.data.map((r) => r.date);
-  for (const { dateKey, present } of outbox.pendingCheckins()) {
+  for (const [dateKey, present] of checkinOverlays) {
     checkins = checkins.filter((d) => d !== dateKey);
     if (present) checkins.push(dateKey);
   }
@@ -263,10 +295,7 @@ async function doHydrate() {
 
   cacheStore.replaceAll(
     { days, checkins, templates },
-    {
-      preserveDates: outbox.dirtyDates(),
-      preserveTemplateIds: outbox.pendingTemplateIds(),
-    },
+    { preserveDates, preserveTemplateIds },
   );
 }
 

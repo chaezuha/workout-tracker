@@ -20,8 +20,9 @@ import { formatDuration } from "@/lib/time";
 import { loggedReps } from "@/services/stats";
 
 // One session's card: name (renamable), accumulated timer, timer controls
-// (today only — one timer runs at a time across all sessions), and its own
-// sortable exercise list. Cross-session drag is intentionally not supported:
+// (starting is today-only, but an already-running timer keeps its controls on
+// any date so a midnight-crossing timer can still be stopped — one timer runs
+// at a time across all sessions), and its own sortable exercise list. Cross-session drag is intentionally not supported:
 // each card has its own DndContext.
 export const SessionCard = ({
   session,
@@ -169,7 +170,7 @@ export const SessionCard = ({
         </div>
       </div>
 
-      {isToday && (
+      {(isToday || isActive) && (
         <div className="flex items-center gap-2">
           {!isActive ? (
             <Button

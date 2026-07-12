@@ -3,6 +3,7 @@ import { GUEST_KEYS } from "@/lib/guestMode";
 import { installLocalStorage } from "@/test/localStorageMock";
 import {
   localGetAllSessionRows,
+  localGetDatesWithWorkouts,
   localGetDayForDate,
   localHasGuestData,
 } from "./localStore";
@@ -158,8 +159,23 @@ describe("localGetAllSessionRows", () => {
       "2026-06-09": [{ id: "e1", name: "Squat" }],
     });
     expect(localGetAllSessionRows()).toEqual([
-      { date: "2026-06-10", durationSeconds: 300 },
-      { date: "2026-06-09", durationSeconds: 0 },
+      { id: "s1", date: "2026-06-10", durationSeconds: 300 },
+      { id: null, date: "2026-06-09", durationSeconds: 0 },
+    ]);
+  });
+});
+
+describe("localGetDatesWithWorkouts", () => {
+  it("includes session-only dates alongside exercise dates", () => {
+    seed(GUEST_KEYS.sessions, {
+      "2026-06-10": [{ id: "s1", name: null, position: 0, durationSeconds: 300 }],
+    });
+    seed(GUEST_KEYS.workouts, {
+      "2026-06-09": [{ id: "e1", name: "Squat", sessionId: "s2" }],
+    });
+    expect(localGetDatesWithWorkouts().sort()).toEqual([
+      "2026-06-09",
+      "2026-06-10",
     ]);
   });
 });

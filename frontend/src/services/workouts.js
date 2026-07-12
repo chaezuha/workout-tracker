@@ -6,7 +6,7 @@ import {
   localGetDatesWithWorkouts,
 } from "@/services/localStore";
 import { cacheStore } from "@/services/cacheStore";
-import { enqueue, dirtyDates } from "@/services/outbox";
+import { enqueue, dirtyDates, subscribe } from "@/services/outbox";
 
 export function rowToExercise(row) {
   return {
@@ -37,6 +37,13 @@ export function rowToSession(row) {
 export async function getDayForDate(dateKey) {
   if (isGuestMode()) return localGetDayForDate(dateKey);
   if (dirtyDates().has(dateKey)) return cacheStore.getDayForDate(dateKey);
+  // A save can land *and flush* while the fetch is in flight; the dirty set
+  // alone misses that (the op is already gone by the time the fetch resolves),
+  // so watch the outbox for the date being touched at any point mid-fetch.
+  let editedMidFetch = false;
+  const unsubscribe = subscribe(() => {
+    if (dirtyDates().has(dateKey)) editedMidFetch = true;
+  });
   try {
     const [sessionsRes, exercisesRes] = await Promise.all([
       supabase
@@ -71,14 +78,18 @@ export async function getDayForDate(dateKey) {
       const session = byId.get(row.session_id) ?? sessions[0];
       session.exercises.push(rowToExercise(row));
     }
-    // A save may have landed while the fetch was in flight; the now-dirty
-    // mirror is newer than what the server returned.
-    if (dirtyDates().has(dateKey)) return cacheStore.getDayForDate(dateKey);
+    // A save may have landed while the fetch was in flight; the mirror is
+    // newer than what the server returned.
+    if (editedMidFetch || dirtyDates().has(dateKey)) {
+      return cacheStore.getDayForDate(dateKey);
+    }
     cacheStore.replaceDay(dateKey, sessions);
     return sessions;
   } catch (err) {
     console.warn("Serving workout day from local cache", err?.message ?? err);
     return cacheStore.getDayForDate(dateKey);
+  } finally {
+    unsubscribe();
   }
 }
 
@@ -171,12 +182,20 @@ export async function getDatesWithWorkouts() {
   const dirty = dirtyDates();
   const mirrorDates = new Set(cacheStore.getDatesWithWorkouts());
   try {
-    const { data, error } = await supabase.from("exercises").select("date");
-    if (error) throw error;
+    // Sessions count too: a timed session with no exercises still marks the
+    // date (calendar dots, CSV export, import skip-list).
+    const [exercisesRes, sessionsRes] = await Promise.all([
+      supabase.from("exercises").select("date"),
+      supabase.from("workout_sessions").select("date"),
+    ]);
+    if (exercisesRes.error) throw exercisesRes.error;
+    if (sessionsRes.error) throw sessionsRes.error;
     // Dirty dates take the mirror's truth: an offline delete removes the
     // date even though the server still lists it, and vice versa.
     const dates = new Set(
-      data.map((r) => r.date).filter((d) => !dirty.has(d) || mirrorDates.has(d)),
+      [...exercisesRes.data, ...sessionsRes.data]
+        .map((r) => r.date)
+        .filter((d) => !dirty.has(d) || mirrorDates.has(d)),
     );
     for (const d of dirty) {
       if (mirrorDates.has(d)) dates.add(d);

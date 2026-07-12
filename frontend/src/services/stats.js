@@ -40,10 +40,13 @@ export function rangeStartKey(rangeValue, now = new Date()) {
   }
 }
 
-export function filterRowsByRange(rows, rangeValue) {
-  const startKey = rangeStartKey(rangeValue);
+// Bounded ranges are capped at today so a mistakenly future-dated workout
+// can't inflate "Today" or "Last 7 days"; "All time" stays unfiltered.
+export function filterRowsByRange(rows, rangeValue, now = new Date()) {
+  const startKey = rangeStartKey(rangeValue, now);
   if (!startKey) return rows;
-  return rows.filter((row) => row.date >= startKey);
+  const endKey = toDateKey(now);
+  return rows.filter((row) => row.date >= startKey && row.date <= endKey);
 }
 
 // Reps actually logged via the Reps dialog. Values come from text inputs as
@@ -65,6 +68,7 @@ export function loggedReps(row) {
 export function aggregateStats(rows) {
   const byName = new Map();
   const allDates = new Set();
+  const trainedSessionIds = new Set();
 
   for (const row of rows) {
     const name = row.name.trim();
@@ -72,6 +76,7 @@ export function aggregateStats(rows) {
     const reps = loggedReps(row);
     if (!reps.length) continue;
     allDates.add(row.date);
+    if (row.sessionId) trainedSessionIds.add(row.sessionId);
 
     const key = name.toLowerCase();
     let entry = byName.get(key);
@@ -103,6 +108,7 @@ export function aggregateStats(rows) {
   return {
     exercises,
     trainedDates: allDates,
+    trainedSessionIds,
     totals: {
       totalVolume: exercises.reduce((sum, e) => sum + e.volume, 0),
       exercises: exercises.length,
@@ -116,13 +122,14 @@ export async function getAllStatsRows() {
   try {
     const { data, error } = await supabase
       .from("exercises")
-      .select("name, weight, sets, reps, completed_reps, date, position")
+      .select("name, weight, sets, reps, completed_reps, session_id, date, position")
       .order("date", { ascending: false })
       .order("position", { ascending: false });
     if (error) throw error;
-    return data.map(({ completed_reps, ...row }) => ({
+    return data.map(({ completed_reps, session_id, ...row }) => ({
       ...row,
       completedReps: completed_reps ?? [],
+      sessionId: session_id ?? null,
     }));
   } catch (err) {
     console.warn("Serving stats from local cache", err?.message ?? err);
@@ -130,14 +137,21 @@ export async function getAllStatsRows() {
   }
 }
 
-// A session only counts if it was actually used: the timer ran, or the date
-// has a completed exercise. Preplanned sessions contribute nothing either way
-// since their duration is 0.
-export function aggregateSessionTotals(sessionRows, trainedDates = new Set()) {
+// A session only counts if it was actually used: the timer ran, or one of
+// its own exercises has logged reps. Preplanned sessions contribute nothing
+// either way since their duration is 0. Synthetic pre-migration rows carry no
+// id and fall back to the date-wide check.
+export function aggregateSessionTotals(
+  sessionRows,
+  { trainedSessionIds = new Set(), trainedDates = new Set() } = {},
+) {
+  const used = (row) => {
+    if ((row.durationSeconds ?? 0) > 0) return true;
+    if (row.id != null) return trainedSessionIds.has(row.id);
+    return trainedDates.has(row.date);
+  };
   return {
-    count: sessionRows.filter(
-      (row) => (row.durationSeconds ?? 0) > 0 || trainedDates.has(row.date),
-    ).length,
+    count: sessionRows.filter(used).length,
     totalSeconds: sessionRows.reduce(
       (sum, row) => sum + (row.durationSeconds ?? 0),
       0,
@@ -152,10 +166,11 @@ export async function getAllSessionRows() {
   try {
     const { data, error } = await supabase
       .from("workout_sessions")
-      .select("date, duration_seconds")
+      .select("id, date, duration_seconds")
       .order("date", { ascending: false });
     if (error) throw error;
     return data.map((row) => ({
+      id: row.id,
       date: row.date,
       durationSeconds: row.duration_seconds ?? 0,
     }));

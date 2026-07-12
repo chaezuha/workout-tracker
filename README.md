@@ -7,10 +7,12 @@
 The app stores its data in Supabase, so you need a (free) project first:
 
 1. Go to [supabase.com](https://supabase.com), sign in, and create a **New Project**.
-2. Open the **SQL Editor** and run the migration in
-   [`supabase/migrations/0001_sessions.sql`](supabase/migrations/0001_sessions.sql).
-   Note: the migration alters an existing `exercises` table, so the base schema
-   has to be in place before you run it.
+2. Open the **SQL Editor** and run the migrations in order:
+   [`supabase/migrations/0000_init.sql`](supabase/migrations/0000_init.sql)
+   first (base tables), then
+   [`supabase/migrations/0001_sessions.sql`](supabase/migrations/0001_sessions.sql)
+   (sessions). Both are safe to re-run on a project that already has the
+   tables.
 3. Under **Settings → API**, copy the **Project URL** and the **anon/publishable
    key** (you'll need both for `.env`).
 

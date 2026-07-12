@@ -174,6 +174,18 @@ describe("rowsToDays", () => {
     expect(days[0].sessions[0].exercises[0].completedReps).toEqual([5, 4]);
   });
 
+  it("rejects well-formed but impossible calendar dates", () => {
+    const csv = [
+      CSV_HEADER.join(","),
+      "2026-99-99,,0,0,Bench,100,3,5,,",
+      "2026-02-30,,0,0,Bench,100,3,5,,",
+      "2026-02-28,,0,0,Bench,100,3,5,,",
+    ].join("\n");
+    const { days, errors } = rowsToDays(parseCsv(csv), { makeId });
+    expect(errors.map((e) => e.line)).toEqual([2, 3]);
+    expect(days.map((d) => d.date)).toEqual(["2026-02-28"]);
+  });
+
   it("parses empty completedReps to an empty array and keeps empty weight", () => {
     const csv = [
       CSV_HEADER.join(","),

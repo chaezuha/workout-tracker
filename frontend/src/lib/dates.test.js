@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { addDays, formatFriendly, fromDateKey, toDateKey } from "./dates";
+import {
+  addDays,
+  formatFriendly,
+  fromDateKey,
+  isValidDateKey,
+  toDateKey,
+} from "./dates";
 
 describe("toDateKey / fromDateKey", () => {
   it("zero-pads month and day", () => {
@@ -12,6 +18,27 @@ describe("toDateKey / fromDateKey", () => {
     expect(date.getMonth()).toBe(6);
     expect(date.getDate()).toBe(3);
     expect(toDateKey(date)).toBe("2026-07-03");
+  });
+});
+
+describe("isValidDateKey", () => {
+  it("accepts real calendar dates", () => {
+    expect(isValidDateKey("2026-07-11")).toBe(true);
+    expect(isValidDateKey("2026-02-28")).toBe(true);
+    expect(isValidDateKey("2024-02-29")).toBe(true); // leap day
+  });
+
+  it("rejects well-formed keys that are not real dates", () => {
+    expect(isValidDateKey("2026-99-99")).toBe(false);
+    expect(isValidDateKey("2026-02-30")).toBe(false);
+    expect(isValidDateKey("2026-00-10")).toBe(false);
+    expect(isValidDateKey("2026-13-01")).toBe(false);
+  });
+
+  it("rejects keys with the wrong shape", () => {
+    expect(isValidDateKey("2026-7-1")).toBe(false);
+    expect(isValidDateKey("07/11/2026")).toBe(false);
+    expect(isValidDateKey("")).toBe(false);
   });
 });
 

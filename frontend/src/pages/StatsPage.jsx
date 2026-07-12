@@ -66,10 +66,10 @@ export const StatsPage = () => {
   const sessionTotals = useMemo(
     () =>
       sessionRows && stats
-        ? aggregateSessionTotals(
-            filterRowsByRange(sessionRows, range),
-            stats.trainedDates,
-          )
+        ? aggregateSessionTotals(filterRowsByRange(sessionRows, range), {
+            trainedSessionIds: stats.trainedSessionIds,
+            trainedDates: stats.trainedDates,
+          })
         : null,
     [sessionRows, stats, range],
   );

@@ -1,4 +1,5 @@
 import { GUEST_KEYS } from "@/lib/guestMode";
+import { reportStorageWriteFailure } from "@/lib/storageEvents";
 
 // localStorage-backed counterparts of the Supabase services. Exercises are
 // stored in app shape ({ id, name, weight, sets, reps, notes, completedReps })
@@ -22,8 +23,11 @@ function readJSON(key, fallback) {
 function writeJSON(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch (err) {
     console.error("Failed to write local data", err);
+    reportStorageWriteFailure();
+    return false;
   }
 }
 
@@ -210,8 +214,15 @@ export function createLocalStore(keys) {
     writeJSON(keys.templates, nextTemplates);
   }
 
+  // Sessions count too: a timed session with no exercises still marks the
+  // date (calendar dots, CSV export, import skip-list).
   function getDatesWithWorkouts() {
-    return Object.keys(readJSON(keys.workouts, {}));
+    return [
+      ...new Set([
+        ...Object.keys(readJSON(keys.workouts, {})),
+        ...Object.keys(readJSON(keys.sessions, {})),
+      ]),
+    ];
   }
 
   // Flattened rows in Supabase row shape, sorted date desc / position desc to
@@ -227,6 +238,7 @@ export function createLocalStore(keys) {
           sets: Number(e.sets),
           reps: Number(e.reps),
           completedReps: e.completedReps ?? [],
+          sessionId: e.sessionId ?? null,
           date,
           position,
         });
@@ -237,21 +249,22 @@ export function createLocalStore(keys) {
     );
   }
 
-  // Flattened session rows ({ date, durationSeconds }) for stats. Dates with
-  // workouts but no session entry (pre-session data whose lazy migration in
-  // getDayForDate hasn't run yet) count as one zero-duration session.
+  // Flattened session rows ({ id, date, durationSeconds }) for stats. Dates
+  // with workouts but no session entry (pre-session data whose lazy migration
+  // in getDayForDate hasn't run yet) count as one zero-duration session; those
+  // synthetic rows carry a null id.
   function getAllSessionRows() {
     const sessionsAll = readJSON(keys.sessions, {});
     const rows = [];
     for (const [date, sessions] of Object.entries(sessionsAll)) {
       for (const s of sessions) {
-        rows.push({ date, durationSeconds: s.durationSeconds ?? 0 });
+        rows.push({ id: s.id, date, durationSeconds: s.durationSeconds ?? 0 });
       }
     }
     const datesWithSessions = new Set(Object.keys(sessionsAll));
     for (const date of Object.keys(readJSON(keys.workouts, {}))) {
       if (!datesWithSessions.has(date)) {
-        rows.push({ date, durationSeconds: 0 });
+        rows.push({ id: null, date, durationSeconds: 0 });
       }
     }
     return rows;

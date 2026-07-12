@@ -64,6 +64,22 @@ describe("filterRowsByRange", () => {
     const rows = [{ date: "1999-01-01" }];
     expect(filterRowsByRange(rows, "all")).toBe(rows);
   });
+
+  it("excludes future-dated rows from bounded ranges", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    const rows = [
+      { date: "2026-06-15" },
+      { date: "2026-06-20" }, // mistakenly logged in the future
+      { date: "2026-06-14" },
+    ];
+    expect(filterRowsByRange(rows, "today")).toEqual([{ date: "2026-06-15" }]);
+    expect(filterRowsByRange(rows, "7d")).toEqual([
+      { date: "2026-06-15" },
+      { date: "2026-06-14" },
+    ]);
+    expect(filterRowsByRange(rows, "all")).toBe(rows);
+  });
 });
 
 describe("loggedReps", () => {
@@ -94,10 +110,11 @@ describe("aggregateStats", () => {
   it("aggregates volume, bests, and dates per exercise", () => {
     // Rows arrive sorted date desc, so the latest casing is seen first
     const rows = [
-      { name: "Bench Press", weight: 100, sets: 2, completedReps: [8, 8], date: "2026-06-10" },
-      { name: "bench press", weight: 90, sets: 1, completedReps: [10], date: "2026-06-08" },
+      { name: "Bench Press", weight: 100, sets: 2, completedReps: [8, 8], date: "2026-06-10", sessionId: "s1" },
+      { name: "bench press", weight: 90, sets: 1, completedReps: [10], date: "2026-06-08", sessionId: "s2" },
     ];
-    const { exercises, totals, trainedDates } = aggregateStats(rows);
+    const { exercises, totals, trainedDates, trainedSessionIds } =
+      aggregateStats(rows);
 
     expect(exercises).toHaveLength(1);
     const bench = exercises[0];
@@ -109,6 +126,7 @@ describe("aggregateStats", () => {
     expect(bench.dateKeys).toEqual(["2026-06-08", "2026-06-10"]);
     expect(totals).toEqual({ totalVolume: 2500, exercises: 1, sessions: 2 });
     expect([...trainedDates].sort()).toEqual(["2026-06-08", "2026-06-10"]);
+    expect([...trainedSessionIds].sort()).toEqual(["s1", "s2"]);
   });
 
   it("excludes preplanned rows and blank names", () => {
@@ -133,20 +151,39 @@ describe("aggregateStats", () => {
 });
 
 describe("aggregateSessionTotals", () => {
-  it("counts sessions with a duration or a trained date", () => {
+  it("counts sessions with a duration or logged exercises of their own", () => {
     const rows = [
-      { date: "2026-06-10", durationSeconds: 60 },
-      { date: "2026-06-09", durationSeconds: 0 },
-      { date: "2026-06-08", durationSeconds: 0 },
+      { id: "a", date: "2026-06-10", durationSeconds: 60 },
+      { id: "b", date: "2026-06-09", durationSeconds: 0 },
+      { id: "c", date: "2026-06-08", durationSeconds: 0 },
     ];
-    expect(aggregateSessionTotals(rows, new Set(["2026-06-09"]))).toEqual({
-      count: 2,
-      totalSeconds: 60,
-    });
+    expect(
+      aggregateSessionTotals(rows, { trainedSessionIds: new Set(["b"]) }),
+    ).toEqual({ count: 2, totalSeconds: 60 });
+  });
+
+  it("does not count an untrained zero-duration session on a trained date", () => {
+    const rows = [
+      { id: "trained", date: "2026-06-09", durationSeconds: 0 },
+      { id: "empty", date: "2026-06-09", durationSeconds: 0 },
+    ];
+    expect(
+      aggregateSessionTotals(rows, {
+        trainedSessionIds: new Set(["trained"]),
+        trainedDates: new Set(["2026-06-09"]),
+      }),
+    ).toEqual({ count: 1, totalSeconds: 0 });
+  });
+
+  it("falls back to the date-wide check for id-less pre-migration rows", () => {
+    const rows = [{ id: null, date: "2026-06-09", durationSeconds: 0 }];
+    expect(
+      aggregateSessionTotals(rows, { trainedDates: new Set(["2026-06-09"]) }),
+    ).toEqual({ count: 1, totalSeconds: 0 });
   });
 
   it("handles missing durations", () => {
-    expect(aggregateSessionTotals([{ date: "2026-06-10" }])).toEqual({
+    expect(aggregateSessionTotals([{ id: "a", date: "2026-06-10" }])).toEqual({
       count: 0,
       totalSeconds: 0,
     });

@@ -40,7 +40,11 @@ export const WorkoutPage = () => {
 
   const { user } = useAuth();
 
-  const loadedDateRef = useRef(null);
+  // State (not a ref) so the UI can hide the previous day's sessions while
+  // the selected day loads — otherwise the stale list stays interactive and
+  // any edit made mid-load is discarded by the incoming setSessions.
+  const [loadedDate, setLoadedDate] = useState(null);
+  const dayLoaded = loadedDate === dateKey;
   // Saves must run one at a time: saveDayForDate deletes rows missing
   // from the list it was given, so a save started with a stale list would
   // delete rows a newer overlapping save just inserted.
@@ -124,7 +128,7 @@ export const WorkoutPage = () => {
         adoptSession(day[0].id);
       }
       setSessions(day);
-      loadedDateRef.current = dateKey;
+      setLoadedDate(dateKey);
     });
     return () => {
       cancelled = true;
@@ -133,11 +137,11 @@ export const WorkoutPage = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (loadedDateRef.current !== dateKey) return;
+    if (loadedDate !== dateKey) return;
     saveQueueRef.current = saveQueueRef.current
       .then(() => saveDayForDate(dateKey, sessions))
       .catch((err) => console.error("Failed to save workout", err));
-  }, [sessions, dateKey, user]);
+  }, [sessions, dateKey, user, loadedDate]);
 
   const addExercise = (sessionId, data) => {
     setSessions((prev) =>
@@ -253,15 +257,19 @@ export const WorkoutPage = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Sessions</h2>
-          <SavedWorkouts
-            dayExercises={sessions.flatMap((s) => s.exercises)}
-            onLoadTemplate={loadTemplateIntoDay}
-          />
+          {dayLoaded && (
+            <SavedWorkouts
+              dayExercises={sessions.flatMap((s) => s.exercises)}
+              onLoadTemplate={loadTemplateIntoDay}
+            />
+          )}
         </div>
         {timer.saveError && (
           <p className="text-sm text-destructive">{timer.saveError}</p>
         )}
-        {sessions.length > 0 ? (
+        {!dayLoaded ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : sessions.length > 0 ? (
           <>
             <AnimatePresence initial={false}>
               {sessions.map((session, index) => (
