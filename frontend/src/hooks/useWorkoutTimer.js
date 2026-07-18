@@ -3,6 +3,7 @@ import {
   getWorkoutTimer,
   saveWorkoutTimer,
   clearWorkoutTimer,
+  WORKOUT_TIMER_STORAGE_KEY,
 } from "@/services/timer";
 import { toDateKey } from "@/lib/dates";
 
@@ -12,12 +13,21 @@ function elapsedFrom(record) {
   return record.accumulated + Math.floor((Date.now() - record.startedAt) / 1000);
 }
 
+// A record started under another identity is invisible to this one; records
+// from before ownerId existed belong to whoever reads them.
+function ownedRecord(ownerId) {
+  const record = getWorkoutTimer();
+  if (!record) return null;
+  if (record.ownerId && ownerId && record.ownerId !== ownerId) return null;
+  return record;
+}
+
 // One timer for the whole app; the record names the session (and date) the
-// elapsed time is credited to when stopped. onSaveDuration(sessionId,
-// dateKey, seconds) is supplied by the page so persistence goes through its
-// save queue.
-export function useWorkoutTimer({ onSaveDuration }) {
-  const [timer, setTimer] = useState(() => getWorkoutTimer());
+// elapsed time is credited to when stopped. Instantiate exactly once — via
+// WorkoutTimerProvider — since each instance holds its own copy of the
+// record. onSaveDuration(sessionId, dateKey, seconds) persists the stop.
+export function useWorkoutTimer({ onSaveDuration, ownerId = null }) {
+  const [timer, setTimer] = useState(() => ownedRecord(ownerId));
   const [elapsed, setElapsed] = useState(() => elapsedFrom(timer));
   const [saveError, setSaveError] = useState("");
   const intervalRef = useRef(null);
@@ -29,24 +39,28 @@ export function useWorkoutTimer({ onSaveDuration }) {
     }
   }, []);
 
-  const update = useCallback((record) => {
-    if (record) {
-      saveWorkoutTimer(record);
-    } else {
-      clearWorkoutTimer();
-    }
-    setTimer(record);
-    setElapsed(elapsedFrom(record));
-  }, []);
+  const update = useCallback(
+    (record) => {
+      if (record) {
+        saveWorkoutTimer({ ...record, ownerId: record.ownerId ?? ownerId ?? undefined });
+      } else {
+        clearWorkoutTimer();
+      }
+      setTimer(record);
+      setElapsed(elapsedFrom(record));
+    },
+    [ownerId],
+  );
 
   const start = useCallback(
-    (sessionId) => {
+    (sessionId, sessionName = null) => {
       setSaveError("");
       update({
         status: "running",
         startedAt: Date.now(),
         accumulated: 0,
         sessionId,
+        sessionName,
         dateKey: toDateKey(new Date()),
       });
     },
@@ -59,6 +73,7 @@ export function useWorkoutTimer({ onSaveDuration }) {
       status: "paused",
       accumulated: elapsedFrom(timer),
       sessionId: timer.sessionId,
+      sessionName: timer.sessionName ?? null,
       dateKey: timer.dateKey,
     });
   }, [timer, update]);
@@ -70,6 +85,7 @@ export function useWorkoutTimer({ onSaveDuration }) {
       startedAt: Date.now(),
       accumulated: timer.accumulated,
       sessionId: timer.sessionId,
+      sessionName: timer.sessionName ?? null,
       dateKey: timer.dateKey,
     });
   }, [timer, update]);
@@ -97,7 +113,7 @@ export function useWorkoutTimer({ onSaveDuration }) {
   // Reads storage directly so the callback stays stable across renders.
   const adoptSession = useCallback(
     (sessionId) => {
-      const record = getWorkoutTimer();
+      const record = ownedRecord(ownerId);
       if (!record || record.sessionId) return;
       update({
         ...record,
@@ -105,8 +121,42 @@ export function useWorkoutTimer({ onSaveDuration }) {
         dateKey: record.dateKey ?? toDateKey(new Date()),
       });
     },
-    [update],
+    [ownerId, update],
   );
+
+  // Identity changes (sign-out, account switch): re-derive the visible record
+  // during render so another identity's timer never flashes; ownerless legacy
+  // records are adopted as-is.
+  const [syncedOwnerId, setSyncedOwnerId] = useState(ownerId);
+  if (ownerId !== syncedOwnerId) {
+    setSyncedOwnerId(ownerId);
+    const record = ownerId ? ownedRecord(ownerId) : timer;
+    setTimer(record);
+    setElapsed(elapsedFrom(record));
+  }
+
+  // Another identity's record is discarded rather than left to resurface
+  // whenever its owner returns.
+  useEffect(() => {
+    if (!ownerId) return;
+    const record = getWorkoutTimer();
+    if (record?.ownerId && record.ownerId !== ownerId) {
+      clearWorkoutTimer();
+    }
+  }, [ownerId]);
+
+  // Cross-tab sync: another tab starting/stopping the timer updates this
+  // one, so two tabs can't both stop and credit the same record.
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== null && e.key !== WORKOUT_TIMER_STORAGE_KEY) return;
+      const record = ownedRecord(ownerId);
+      setTimer(record);
+      setElapsed(elapsedFrom(record));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [ownerId]);
 
   useEffect(() => {
     if (timer?.status !== "running") return;
@@ -125,6 +175,8 @@ export function useWorkoutTimer({ onSaveDuration }) {
     elapsed,
     status: timer?.status ?? "idle",
     activeSessionId: timer?.sessionId ?? null,
+    dateKey: timer?.dateKey ?? null,
+    sessionName: timer?.sessionName ?? null,
     saveError,
     start,
     pause,

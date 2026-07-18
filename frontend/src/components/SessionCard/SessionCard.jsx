@@ -30,6 +30,7 @@ export const SessionCard = ({
   isToday,
   dateKey,
   celebratingId,
+  lastResults,
   timer,
   onStartTimer,
   onPauseTimer,
@@ -177,7 +178,7 @@ export const SessionCard = ({
               type="button"
               size="sm"
               disabled={otherTimerActive}
-              onClick={() => onStartTimer(session.id)}
+              onClick={() => onStartTimer(session.id, displayName)}
             >
               Start timer
             </Button>
@@ -228,6 +229,7 @@ export const SessionCard = ({
           <Column
             exercises={session.exercises}
             celebratingId={celebratingId}
+            lastResults={lastResults}
             onDelete={(exerciseId) => onDeleteExercise(session.id, exerciseId)}
             onEdit={(exerciseId, data) =>
               onEditExercise(session.id, exerciseId, data)

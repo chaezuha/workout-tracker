@@ -8,6 +8,7 @@ import {
   localGetCheckinDates,
   localGetTemplates,
 } from "@/services/localStore";
+import { exerciseToDbFields } from "@/services/workouts";
 
 // One-time import of guest localStorage data into the signed-in user's
 // Supabase account. Guest ids are already UUIDs, so rows keep their ids and
@@ -84,12 +85,9 @@ export async function migrateGuestDataToAccount() {
           date,
           session_id: idFor(s.id),
           name: e.name,
-          weight: e.weight === "" || e.weight == null ? null : Number(e.weight),
-          sets: Number(e.sets),
-          reps: Number(e.reps),
           notes: e.notes ?? "",
-          completed_reps: e.completedReps ?? [],
           position: i,
+          ...exerciseToDbFields(e),
         });
       });
     }

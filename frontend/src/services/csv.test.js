@@ -40,16 +40,46 @@ describe("serializeDays", () => {
     const lines = csv.trim().split("\r\n");
     expect(lines[0]).toBe(CSV_HEADER.join(","));
     expect(lines[1]).toBe(
-      "2026-07-01,,0,3600,Bench Press,100,3,5,5;5;4,",
+      "2026-07-01,,0,3600,Bench Press,100,3,5,5;5;4,,",
     );
     expect(lines[2]).toBe(
-      "2026-07-06,Push Day,0,3600,Bench Press,100,3,5,5;5;4,",
+      "2026-07-06,Push Day,0,3600,Bench Press,100,3,5,5;5;4,,",
     );
   });
 
   it("emits a session-only row for sessions without exercises", () => {
     const csv = serializeDays([day("2026-07-06", [session({ exercises: [] })])]);
-    expect(csv.trim().split("\r\n")[1]).toBe("2026-07-06,Push Day,0,3600,,,,,,");
+    expect(csv.trim().split("\r\n")[1]).toBe("2026-07-06,Push Day,0,3600,,,,,,,");
+  });
+
+  it("serializes setEntries as JSON in the last column", () => {
+    const entries = [
+      { weight: 95, targetReps: 8, reps: 8, type: "warmup", rpe: null },
+      { weight: 135, targetReps: 8, reps: 7, type: "working", rpe: 8.5 },
+    ];
+    const csv = serializeDays([
+      day("2026-07-06", [
+        session({
+          exercises: [
+            {
+              name: "Bench Press",
+              weight: 135,
+              sets: 2,
+              reps: 8,
+              notes: "",
+              completedReps: [8, 7],
+              setEntries: entries,
+            },
+          ],
+        }),
+      ]),
+    ]);
+    const line = csv.trim().split("\r\n")[1];
+    expect(line).toContain('"[{""weight"":95');
+    const parsed = parseCsv(csv);
+    expect(JSON.parse(parsed[1][CSV_HEADER.indexOf("setEntries")])).toEqual(
+      entries,
+    );
   });
 
   it("escapes commas, quotes, and newlines", () => {
@@ -198,6 +228,54 @@ describe("rowsToDays", () => {
       completedReps: [],
       notes: "bodyweight",
     });
+  });
+
+  it("imports pre-setEntries exports unchanged, synthesizing entries", () => {
+    const oldHeader =
+      "date,sessionName,sessionPosition,sessionDurationSeconds,exerciseName,weight,sets,reps,completedReps,notes";
+    const csv = [oldHeader, "2026-07-06,,0,0,Bench,100,3,5,5;4,old file"].join(
+      "\n",
+    );
+    const { days, errors } = rowsToDays(parseCsv(csv), { makeId });
+    expect(errors).toEqual([]);
+    const e = days[0].sessions[0].exercises[0];
+    expect(e).toMatchObject({ weight: 100, sets: 3, reps: 5 });
+    expect(e.setEntries).toEqual([
+      { weight: 100, targetReps: 5, reps: 5, type: "working", rpe: null },
+      { weight: 100, targetReps: 5, reps: 4, type: "working", rpe: null },
+      { weight: 100, targetReps: 5, reps: null, type: "working", rpe: null },
+    ]);
+  });
+
+  it("treats valid setEntries JSON as authoritative over disagreeing legacy columns", () => {
+    const entriesJson =
+      '[{"weight":95,"targetReps":8,"reps":8,"type":"warmup","rpe":null},{"weight":135,"targetReps":8,"reps":7,"type":"working","rpe":null}]';
+    const csv = [
+      CSV_HEADER.join(","),
+      // legacy columns say 100 lb × 5 sets — the JSON wins and legacy is re-derived
+      `2026-07-06,,0,0,Bench,100,5,5,,,"${entriesJson.replaceAll('"', '""')}"`,
+    ].join("\n");
+    const { days, errors } = rowsToDays(parseCsv(csv), { makeId });
+    expect(errors).toEqual([]);
+    const e = days[0].sessions[0].exercises[0];
+    expect(e.setEntries).toHaveLength(2);
+    expect(e).toMatchObject({
+      weight: 135,
+      sets: 2,
+      reps: 8,
+      completedReps: [8, 7],
+    });
+  });
+
+  it("reports malformed setEntries JSON as a per-line error", () => {
+    const csv = [
+      CSV_HEADER.join(","),
+      "2026-07-06,,0,0,Bench,100,3,5,,,{bad json",
+      "2026-07-06,,0,0,Squat,200,3,5,5;5;5,,",
+    ].join("\n");
+    const { days, errors } = rowsToDays(parseCsv(csv), { makeId });
+    expect(errors.map((e) => e.line)).toEqual([2]);
+    expect(days[0].sessions[0].exercises.map((e) => e.name)).toEqual(["Squat"]);
   });
 
   it("rejects files without the required header", () => {

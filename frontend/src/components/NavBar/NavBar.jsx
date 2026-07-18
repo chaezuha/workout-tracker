@@ -42,7 +42,9 @@ export const NavBar = () => {
   );
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
+    // Stickiness lives on the AppLayout chrome container so the timer bar
+    // can stack beneath the nav.
+    <header className="border-b bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-3">
         <nav className="flex gap-1">
           {links.map(({ to, label }) => (

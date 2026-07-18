@@ -4,7 +4,7 @@ import {
 } from "@dnd-kit/sortable";
 import { AnimatePresence } from "motion/react";
 import { Exercise } from "../../Exercise/Exercise";
-export const Column = ({ exercises, celebratingId, onDelete, onEdit }) => {
+export const Column = ({ exercises, celebratingId, lastResults, onDelete, onEdit }) => {
   return (
     <div className="flex flex-col gap-3">
       <SortableContext
@@ -21,6 +21,10 @@ export const Column = ({ exercises, celebratingId, onDelete, onEdit }) => {
               reps={exercise.reps}
               notes={exercise.notes}
               completedReps={exercise.completedReps}
+              setEntries={exercise.setEntries}
+              lastResult={lastResults?.get(
+                (exercise.name ?? "").trim().toLowerCase(),
+              )}
               celebrating={exercise.id === celebratingId}
               key={exercise.id}
               onDelete={onDelete}

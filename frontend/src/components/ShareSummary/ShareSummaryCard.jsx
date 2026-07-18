@@ -40,8 +40,8 @@ export const ShareSummaryCard = ({ summary, ref }) => (
             )}
           </span>
           <span className="whitespace-nowrap text-sm text-muted-foreground">
-            {ex.loggedReps.join(" / ")} reps
-            {ex.weight ? ` @ ${ex.weight} lb` : ""}
+            {ex.setSummary ??
+              `${ex.loggedReps.join(" / ")} reps${ex.weight ? ` @ ${ex.weight} lb` : ""}`}
           </span>
         </div>
       ))}

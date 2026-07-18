@@ -2,8 +2,26 @@ import { useEffect, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
-import { Check } from "lucide-react";
+import { Check, CopyPlus, Plus, X } from "lucide-react";
 import { loggedReps } from "@/services/stats";
+import {
+  sanitizeEntry,
+  deriveLegacyFields,
+  summarizeEntries,
+  toWeight,
+} from "@/services/setEntries";
+import {
+  suggestProgression,
+  formatSuggestion,
+  formatLastEntries,
+} from "@/services/progression";
+import {
+  getEffortScale,
+  setEffortScale,
+  rpeToDisplay,
+  displayToRpe,
+} from "@/lib/effort";
+import { formatFriendly, fromDateKey } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +36,13 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Keyframes end on the card's resting shadow (shadow-xs) so the pulse
 // doesn't leave a stale inline box-shadow behind.
@@ -30,9 +55,30 @@ const pulse = (rgb, spread) => ({
   ],
 });
 
-export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, celebrating, onDelete, onEdit }) => {
-  const [inputReps, setNewReps] = useState(completedReps ?? []);
-  const [repsOpen, setRepsOpen] = useState(false);
+const TYPE_LABELS = { warmup: "Warm-up", working: "Working", drop: "Drop" };
+
+// Dialog rows hold raw input strings; sanitizeEntry converts on save.
+const entryToRow = (entry, scale) => ({
+  weight: entry.weight ?? "",
+  targetReps: entry.targetReps,
+  reps: entry.reps ?? "",
+  type: entry.type,
+  rpeDisplay: rpeToDisplay(entry.rpe, scale) ?? "",
+});
+
+const rowToEntry = (row, scale) =>
+  sanitizeEntry({
+    weight: row.weight,
+    targetReps: row.targetReps,
+    reps: row.reps,
+    type: row.type,
+    rpe: displayToRpe(row.rpeDisplay, scale),
+  });
+
+export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, setEntries, lastResult, celebrating, onDelete, onEdit }) => {
+  const [rows, setRows] = useState([]);
+  const [scale, setScale] = useState(() => getEffortScale());
+  const [logOpen, setLogOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [justLogged, setJustLogged] = useState(false);
 
@@ -42,7 +88,9 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
     return () => clearTimeout(t);
   }, [justLogged]);
 
+  const entries = setEntries ?? [];
   const loggedCount = loggedReps({ sets, completedReps }).length;
+  const suggestion = suggestProgression(lastResult);
 
   const {
     attributes,
@@ -59,33 +107,117 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
     transform: CSS.Transform.toString(transform),
   };
 
-  function renderReps() {
-    const inputs = [];
-    const setCount = Number(sets);
+  const openLog = (open) => {
+    if (open) setRows(entries.map((en) => entryToRow(en, scale)));
+    setLogOpen(open);
+  };
 
-    for (let i = 0; i < setCount; i++) {
-      inputs.push(
-        <Field key={i}>
-          <Label>Set {i + 1}</Label>
-          <Input
-            type="number"
-            inputMode="numeric"
-            enterKeyHint="done"
-            placeholder="Input reps"
-            value={inputReps[i] || ""}
-            onChange={(e) => handleRepChange(i, e.target.value)}
-          />
-        </Field>
-      )
+  const patchRow = (i, patch) => {
+    setRows((prev) => prev.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  };
+
+  const copyRowAbove = (i) => {
+    setRows((prev) =>
+      prev.map((r, j) => (j === i ? { ...prev[i - 1] } : r)),
+    );
+  };
+
+  const removeRow = (i) => {
+    setRows((prev) => prev.filter((_, j) => j !== i));
+  };
+
+  const addRow = () => {
+    setRows((prev) => {
+      const last = prev.at(-1);
+      return prev.concat({
+        weight: last?.weight ?? (weight ?? ""),
+        targetReps: last?.targetReps ?? (Math.floor(Number(reps)) || 1),
+        reps: "",
+        type: last?.type === "warmup" ? "working" : (last?.type ?? "working"),
+        rpeDisplay: "",
+      });
+    });
+  };
+
+  const completeAllPlanned = () => {
+    setRows((prev) =>
+      prev.map((r) => (r.reps === "" ? { ...r, reps: String(r.targetReps) } : r)),
+    );
+  };
+
+  // With a suggestion: apply its weight/target to un-logged rows. Without
+  // one (mixed/pyramid last time): rebuild the plan from last time's sets,
+  // keeping anything already logged today at the same position.
+  const applyPrefill = () => {
+    setRows((prev) => {
+      if (suggestion) {
+        return prev.map((r) =>
+          r.reps === ""
+            ? { ...r, weight: suggestion.weight, targetReps: suggestion.targetReps }
+            : r,
+        );
+      }
+      const base = lastResult.entries.map((en) => ({
+        weight: en.weight ?? "",
+        targetReps: en.targetReps,
+        reps: "",
+        type: en.type,
+        rpeDisplay: "",
+      }));
+      prev.forEach((r, i) => {
+        if (r.reps !== "" && base[i]) base[i] = r;
+      });
+      return base;
+    });
+  };
+
+  const toggleScale = () => {
+    const next = scale === "rpe" ? "rir" : "rpe";
+    // Re-express typed values in the new scale so nothing shifts meaning.
+    setRows((prev) =>
+      prev.map((r) => ({
+        ...r,
+        rpeDisplay: rpeToDisplay(displayToRpe(r.rpeDisplay, scale), next) ?? "",
+      })),
+    );
+    setScale(next);
+    setEffortScale(next);
+  };
+
+  const submitLog = (e) => {
+    e.preventDefault();
+    const next = rows.map((r) => rowToEntry(r, scale));
+    onEdit(id, { setEntries: next, ...deriveLegacyFields(next) });
+    setLogOpen(false);
+    setJustLogged(true);
+  };
+
+  // Plan edits only re-shape un-logged sets: the entry count follows `sets`,
+  // and weight/target overwrite rows without a logged result. Logged sets
+  // keep what actually happened.
+  const submitEdit = (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    const count = Math.max(0, Math.floor(Number(data.sets)) || 0);
+    const target = Math.floor(Number(data.reps)) || 1;
+    const next = entries
+      .slice(0, count)
+      .map((en) =>
+        en.reps == null
+          ? { ...en, weight: toWeight(data.weight), targetReps: target }
+          : en,
+      );
+    while (next.length < count) {
+      next.push(sanitizeEntry({ weight: data.weight, targetReps: target }));
     }
-    return inputs;
-  }
-
-  function handleRepChange(i, newValue) {
-    const next = inputReps.slice();
-    next[i] = newValue;
-    setNewReps(next);
-  }
+    onEdit(id, {
+      name: data.name,
+      notes: data.notes,
+      setEntries: next,
+      ...deriveLegacyFields(next),
+    });
+    setEditOpen(false);
+  };
 
   return (
     // The outer div belongs to dnd-kit (its inline transform must not be
@@ -133,10 +265,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
       <div className="min-w-0 space-y-1">
         <div className="font-medium">{name}</div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>
-            {weight ? `${weight} lb · ` : ""}
-            {sets} sets × {reps} reps
-          </span>
+          <span>{summarizeEntries(entries)}</span>
           {loggedCount > 0 && (
             <motion.span
               initial={{ scale: 0 }}
@@ -152,33 +281,155 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
         {notes && (
           <div className="truncate text-sm text-muted-foreground">{notes}</div>
         )}
+        {lastResult && (
+          <div className="text-xs text-muted-foreground">
+            Last ({formatFriendly(fromDateKey(lastResult.date))}):{" "}
+            {formatLastEntries(lastResult.entries)}
+            {/* the hint collapses once today's logging starts */}
+            {loggedCount === 0 && suggestion && (
+              <span className="text-foreground/70">
+                {" "}· {formatSuggestion(suggestion)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       <div className="ml-auto flex gap-2">
-      <Dialog open={repsOpen} onOpenChange={setRepsOpen}>
+      <Dialog open={logOpen} onOpenChange={openLog}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm">Reps</Button>
+          <Button variant="outline" size="sm">Log sets</Button>
         </DialogTrigger>
-        <DialogContent className = "sm:max-w-sm">
-          <form className="grid gap-4" onSubmit={(e) => {
-            e.preventDefault();
-            onEdit(id, {completedReps: inputReps});
-            setRepsOpen(false);
-            setJustLogged(true);
-          }}>
+        <DialogContent className="sm:max-w-md">
+          <form className="grid gap-4" onSubmit={submitLog}>
             <DialogHeader>
-              <DialogTitle>Log reps</DialogTitle>
+              <DialogTitle>Log sets</DialogTitle>
               <DialogDescription>
-                Record the reps you completed for each set
+                Weight and reps for each set; type and{" "}
+                {scale === "rpe" ? "RPE" : "RIR"} are optional.
               </DialogDescription>
             </DialogHeader>
-            <FieldGroup className="max-h-[55vh] overflow-y-auto">
-              {renderReps()}
-            </FieldGroup>
+            <div className="max-h-[55vh] space-y-1.5 overflow-y-auto pr-1">
+              <div className="grid grid-cols-[minmax(5rem,1fr)_minmax(4rem,1fr)_minmax(3.5rem,1fr)_3.25rem_3.5rem] items-center gap-1.5 text-xs text-muted-foreground">
+                <span>Type</span>
+                <span>Weight</span>
+                <span>Reps</span>
+                <button
+                  type="button"
+                  onClick={toggleScale}
+                  title="Switch between RPE and RIR"
+                  className="rounded text-left underline decoration-dotted underline-offset-2 hover:text-foreground"
+                >
+                  {scale === "rpe" ? "RPE" : "RIR"}
+                </button>
+                <span />
+              </div>
+              {rows.map((row, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-[minmax(5rem,1fr)_minmax(4rem,1fr)_minmax(3.5rem,1fr)_3.25rem_3.5rem] items-center gap-1.5"
+                >
+                  <Select
+                    value={row.type}
+                    onValueChange={(type) => patchRow(i, { type })}
+                  >
+                    <SelectTrigger
+                      aria-label={`Set ${i + 1} type`}
+                      className="w-full px-2"
+                    >
+                      <SelectValue>{TYPE_LABELS[row.type]}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="warmup">Warm-up</SelectItem>
+                      <SelectItem value="working">Working</SelectItem>
+                      <SelectItem value="drop">Drop set</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.5"
+                    aria-label={`Set ${i + 1} weight`}
+                    placeholder="lb"
+                    value={row.weight}
+                    onChange={(e) => patchRow(i, { weight: e.target.value })}
+                  />
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    aria-label={`Set ${i + 1} reps`}
+                    placeholder={String(row.targetReps)}
+                    value={row.reps}
+                    onChange={(e) => patchRow(i, { reps: e.target.value })}
+                  />
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.5"
+                    aria-label={`Set ${i + 1} ${scale === "rpe" ? "RPE" : "RIR"}`}
+                    value={row.rpeDisplay}
+                    onChange={(e) => patchRow(i, { rpeDisplay: e.target.value })}
+                  />
+                  <div className="flex items-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Copy set above"
+                      disabled={i === 0}
+                      onClick={() => copyRowAbove(i)}
+                    >
+                      <CopyPlus aria-hidden />
+                      <span className="sr-only">Copy set above</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Remove set"
+                      onClick={() => removeRow(i)}
+                    >
+                      <X aria-hidden />
+                      <span className="sr-only">Remove set</span>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={addRow}>
+                <Plus aria-hidden /> Add set
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={completeAllPlanned}
+              >
+                Complete all planned
+              </Button>
+              {lastResult && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  title={
+                    suggestion
+                      ? formatSuggestion(suggestion)
+                      : "Copy last time's sets as today's plan"
+                  }
+                  onClick={applyPrefill}
+                >
+                  {suggestion ? "Prefill suggestion" : "Prefill from last time"}
+                </Button>
+              )}
+            </div>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Save reps</Button>
+              <Button type="submit">Save sets</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -188,16 +439,12 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
             <Button variant="outline" size="sm">Edit</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
-          <form className="grid gap-4" onSubmit={(e) => {
-            e.preventDefault();
-            const data = Object.fromEntries(new FormData(e.target));
-            onEdit(id, data);
-            setEditOpen(false);
-          }}>
+          <form className="grid gap-4" onSubmit={submitEdit}>
             <DialogHeader>
               <DialogTitle>Edit exercise</DialogTitle>
               <DialogDescription>
-                Update the details for this exercise
+                Weight, sets, and reps set the plan; sets you've already
+                logged keep their own values.
               </DialogDescription>
             </DialogHeader>
             <FieldGroup>
@@ -214,7 +461,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, c
                   inputMode="decimal"
                   min="0"
                   step="0.5"
-                  defaultValue={weight}
+                  defaultValue={weight ?? ""}
                 />
               </Field>
               <Field>

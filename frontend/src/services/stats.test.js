@@ -148,6 +148,48 @@ describe("aggregateStats", () => {
     expect(exercises.map((e) => e.name)).toEqual(["Squat", "Pull Up"]);
     expect(exercises[1].volume).toBe(0);
   });
+
+  it("computes per-set volume and excludes warmups from bests", () => {
+    const entries = [
+      { weight: 95, targetReps: 8, reps: 8, type: "warmup", rpe: null },
+      { weight: 135, targetReps: 8, reps: 8, type: "working", rpe: null },
+      { weight: 115, targetReps: 8, reps: 10, type: "drop", rpe: null },
+    ];
+    const rows = [
+      {
+        name: "Bench Press",
+        // legacy columns as a new client would derive them
+        weight: 135,
+        sets: 3,
+        reps: 8,
+        completedReps: [8, 8, 10],
+        setEntries: entries,
+        date: "2026-06-10",
+      },
+    ];
+    const { exercises } = aggregateStats(rows);
+    const bench = exercises[0];
+    expect(bench.volume).toBe(95 * 8 + 135 * 8 + 115 * 10);
+    expect(bench.bestWeight).toBe(135); // not the 95 warmup, drop counts
+    expect(bench.bestOneRepMax).toBeCloseTo(
+      Math.max(estimateOneRepMax(135, 8), estimateOneRepMax(115, 10)),
+      5,
+    );
+  });
+
+  it("matches the legacy formulas exactly for legacy-shaped rows", () => {
+    const legacyRow = {
+      name: "Bench Press",
+      weight: 100,
+      sets: 2,
+      completedReps: [8, 8],
+      date: "2026-06-10",
+    };
+    const { exercises } = aggregateStats([legacyRow]);
+    expect(exercises[0].volume).toBe(16 * 100);
+    expect(exercises[0].bestWeight).toBe(100);
+    expect(exercises[0].bestOneRepMax).toBeCloseTo(estimateOneRepMax(100, 8), 5);
+  });
 });
 
 describe("aggregateSessionTotals", () => {

@@ -238,6 +238,7 @@ export function createLocalStore(keys) {
           sets: Number(e.sets),
           reps: Number(e.reps),
           completedReps: e.completedReps ?? [],
+          setEntries: e.setEntries ?? null,
           sessionId: e.sessionId ?? null,
           date,
           position,

@@ -112,7 +112,14 @@ describe("migrateGuestDataToAccount", () => {
         sets: 3, // numeric strings become numbers
         reps: 8,
         notes: "",
-        completed_reps: ["8", "8"],
+        // legacy columns are derived from the synthesized entries: numeric,
+        // full-length, 0 = unlogged
+        completed_reps: [8, 8, 0],
+        set_data: [
+          { weight: null, targetReps: 8, reps: 8, type: "working", rpe: null },
+          { weight: null, targetReps: 8, reps: 8, type: "working", rpe: null },
+          { weight: null, targetReps: 8, reps: null, type: "working", rpe: null },
+        ],
         position: 0,
       },
     ]);

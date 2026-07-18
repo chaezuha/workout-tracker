@@ -6,6 +6,8 @@ import {
   localGetAllSessionRows,
 } from "@/services/localStore";
 import { cacheStore } from "@/services/cacheStore";
+import { dirtyDates } from "@/services/outbox";
+import { normalizeExercise } from "@/services/setEntries";
 import { addDays, toDateKey } from "@/lib/dates";
 
 export function estimateOneRepMax(weight, reps) {
@@ -62,6 +64,13 @@ export function loggedReps(row) {
   return capped.map(Number).filter((r) => Number.isFinite(r) && r > 0);
 }
 
+// The logged sets as canonical entries ({ weight, targetReps, reps, type,
+// rpe }); legacy rows synthesize entries on the fly, so per-set math over
+// them degenerates to exactly the old single-weight formulas.
+export function loggedSets(row) {
+  return normalizeExercise(row).setEntries.filter((en) => en.reps != null);
+}
+
 // Rows must be sorted date desc / position desc so the first casing seen per
 // lowercased name is the latest logged one (same rule as toSuggestions).
 // Rows with no logged reps are preplanned exercises and are excluded.
@@ -73,8 +82,8 @@ export function aggregateStats(rows) {
   for (const row of rows) {
     const name = row.name.trim();
     if (!name) continue;
-    const reps = loggedReps(row);
-    if (!reps.length) continue;
+    const sets = loggedSets(row);
+    if (!sets.length) continue;
     allDates.add(row.date);
     if (row.sessionId) trainedSessionIds.add(row.sessionId);
 
@@ -85,13 +94,17 @@ export function aggregateStats(rows) {
       byName.set(key, entry);
     }
 
-    const weight = row.weight ?? 0;
-    entry.volume += reps.reduce((sum, r) => sum + r, 0) * weight;
-    entry.bestWeight = Math.max(entry.bestWeight, weight);
-    for (const r of reps) {
+    // Volume counts every logged set (warm-ups included — it's work done);
+    // bests exclude warm-ups so a heavy warm-up single can't set a record.
+    for (const en of sets) {
+      entry.volume += en.reps * (en.weight ?? 0);
+    }
+    for (const en of sets) {
+      if (en.type === "warmup") continue;
+      entry.bestWeight = Math.max(entry.bestWeight, en.weight ?? 0);
       entry.bestOneRepMax = Math.max(
         entry.bestOneRepMax,
-        estimateOneRepMax(weight, r),
+        estimateOneRepMax(en.weight ?? 0, en.reps),
       );
     }
     entry.dates.add(row.date);
@@ -118,22 +131,35 @@ export function aggregateStats(rows) {
 }
 
 export async function getAllStatsRows() {
-  if (isGuestMode()) return localGetAllExerciseRows();
+  if (isGuestMode()) return localGetAllExerciseRows().map(normalizeExercise);
   try {
     const { data, error } = await supabase
       .from("exercises")
-      .select("name, weight, sets, reps, completed_reps, session_id, date, position")
+      .select("name, weight, sets, reps, completed_reps, set_data, session_id, date, position")
       .order("date", { ascending: false })
       .order("position", { ascending: false });
     if (error) throw error;
-    return data.map(({ completed_reps, session_id, ...row }) => ({
+    const rows = data.map(({ completed_reps, set_data, session_id, ...row }) => ({
       ...row,
       completedReps: completed_reps ?? [],
+      setEntries: set_data ?? null,
       sessionId: session_id ?? null,
     }));
+    // Dates with unsynced edits are served from the mirror, matching
+    // getDayForDate — otherwise yesterday's offline workout is invisible to
+    // stats, PR baselines, and progression hints until the outbox flushes.
+    const dirty = dirtyDates();
+    if (!dirty.size) return rows.map(normalizeExercise);
+    const merged = rows
+      .filter((r) => !dirty.has(r.date))
+      .concat(cacheStore.getAllExerciseRows().filter((r) => dirty.has(r.date)))
+      .sort((a, b) =>
+        a.date === b.date ? b.position - a.position : b.date.localeCompare(a.date),
+      );
+    return merged.map(normalizeExercise);
   } catch (err) {
     console.warn("Serving stats from local cache", err?.message ?? err);
-    return cacheStore.getAllExerciseRows();
+    return cacheStore.getAllExerciseRows().map(normalizeExercise);
   }
 }
 

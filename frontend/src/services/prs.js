@@ -1,20 +1,23 @@
-import { estimateOneRepMax, loggedReps } from "@/services/stats";
+import { estimateOneRepMax, loggedSets } from "@/services/stats";
 
 // "New PR this session" detection. Baselines are a mutable
 // Map<lowercased name, { bestWeight, bestOneRepMax }> that callers keep
 // folding results into (recordResult), so a PR beaten twice in one session
 // celebrates twice instead of repeating the first toast.
 
+// Warm-up sets never set records; working and drop sets do. Legacy rows
+// normalize to all-working entries, so their bests are unchanged.
 function currentBests(exercise) {
   const name = (exercise.name ?? "").trim();
   if (!name) return null;
-  const reps = loggedReps(exercise);
-  if (!reps.length) return null;
-  const weight = Number(exercise.weight) || 0;
+  const sets = loggedSets(exercise).filter((en) => en.type !== "warmup");
+  if (!sets.length) return null;
   return {
     key: name.toLowerCase(),
-    weight,
-    oneRepMax: Math.max(...reps.map((r) => estimateOneRepMax(weight, r))),
+    weight: Math.max(...sets.map((en) => en.weight ?? 0)),
+    oneRepMax: Math.max(
+      ...sets.map((en) => estimateOneRepMax(en.weight ?? 0, en.reps)),
+    ),
   };
 }
 

@@ -9,11 +9,13 @@ import {
 import { MotionConfig } from "motion/react";
 import { Toaster, toast } from "sonner";
 import { NavBar } from "./components/NavBar/NavBar";
+import { WorkoutTimerBar } from "./components/WorkoutTimerBar/WorkoutTimerBar";
 import { ReloadPrompt } from "./components/ReloadPrompt/ReloadPrompt";
 import { GuestBanner } from "./components/GuestBanner/GuestBanner";
 import { StorageWarningBanner } from "./components/StorageWarningBanner/StorageWarningBanner";
 import { GuestMigrationPrompt } from "./components/GuestMigrationPrompt/GuestMigrationPrompt";
 import { useAuth } from "@/contexts/AuthContext";
+import { WorkoutTimerProvider } from "@/contexts/WorkoutTimerContext";
 import { AuthForm } from "@/components/Auth/AuthForm";
 
 // Route-level code splitting: each page loads on first visit instead of
@@ -35,7 +37,12 @@ const StatsPage = lazy(() =>
 
 const AppLayout = () => (
   <>
-    <NavBar />
+    {/* One sticky container: the timer bar stacks under the nav instead of
+        fighting it for top-0 (nav height varies when links wrap). */}
+    <div className="sticky top-0 z-10">
+      <NavBar />
+      <WorkoutTimerBar />
+    </div>
     <GuestBanner />
     <StorageWarningBanner />
     <GuestMigrationPrompt />
@@ -72,16 +79,18 @@ const App = () => {
   return (
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
-        <Routes>
-          <Route path="/auth" element={<AuthPage />} />
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<WorkoutPage />} />
-            <Route path="/checkin" element={<CheckinPage />} />
-            <Route path="/stats" element={<StatsPage />} />
-            <Route path="/calculators" element={<CalculatorsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
+        <WorkoutTimerProvider>
+          <Routes>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<WorkoutPage />} />
+              <Route path="/checkin" element={<CheckinPage />} />
+              <Route path="/stats" element={<StatsPage />} />
+              <Route path="/calculators" element={<CalculatorsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </WorkoutTimerProvider>
         <ReloadPrompt />
         <Toaster
           position="bottom-center"

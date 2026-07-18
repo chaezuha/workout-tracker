@@ -7,9 +7,14 @@ import {
 } from "@/services/localStore";
 import { cacheStore } from "@/services/cacheStore";
 import { enqueue, dirtyDates, subscribe } from "@/services/outbox";
+import {
+  normalizeExercise,
+  normalizeSessions,
+  deriveLegacyFields,
+} from "@/services/setEntries";
 
 export function rowToExercise(row) {
-  return {
+  return normalizeExercise({
     id: row.id,
     name: row.name,
     weight: row.weight ?? "",
@@ -17,6 +22,23 @@ export function rowToExercise(row) {
     reps: row.reps,
     notes: row.notes ?? "",
     completedReps: row.completed_reps ?? [],
+    setEntries: row.set_data ?? null,
+  });
+}
+
+// The exercise columns every Supabase write shares: set_data is canonical
+// and the legacy columns are re-derived from it, so the two can only
+// disagree when a pre-setEntries client wrote last (the read-side staleness
+// guard in normalizeExercise handles that).
+export function exerciseToDbFields(exercise) {
+  const normalized = normalizeExercise(exercise);
+  const legacy = deriveLegacyFields(normalized.setEntries);
+  return {
+    weight: legacy.weight,
+    sets: legacy.sets,
+    reps: legacy.reps,
+    completed_reps: legacy.completedReps,
+    set_data: normalized.setEntries,
   };
 }
 
@@ -35,8 +57,10 @@ export function rowToSession(row) {
 // Signed-in reads go server-first, refreshing the local mirror on the way;
 // days with unsynced edits (or any fetch failure) are served from the mirror.
 export async function getDayForDate(dateKey) {
-  if (isGuestMode()) return localGetDayForDate(dateKey);
-  if (dirtyDates().has(dateKey)) return cacheStore.getDayForDate(dateKey);
+  if (isGuestMode()) return normalizeSessions(localGetDayForDate(dateKey));
+  if (dirtyDates().has(dateKey)) {
+    return normalizeSessions(cacheStore.getDayForDate(dateKey));
+  }
   // A save can land *and flush* while the fetch is in flight; the dirty set
   // alone misses that (the op is already gone by the time the fetch resolves),
   // so watch the outbox for the date being touched at any point mid-fetch.
@@ -81,13 +105,13 @@ export async function getDayForDate(dateKey) {
     // A save may have landed while the fetch was in flight; the mirror is
     // newer than what the server returned.
     if (editedMidFetch || dirtyDates().has(dateKey)) {
-      return cacheStore.getDayForDate(dateKey);
+      return normalizeSessions(cacheStore.getDayForDate(dateKey));
     }
     cacheStore.replaceDay(dateKey, sessions);
     return sessions;
   } catch (err) {
     console.warn("Serving workout day from local cache", err?.message ?? err);
-    return cacheStore.getDayForDate(dateKey);
+    return normalizeSessions(cacheStore.getDayForDate(dateKey));
   } finally {
     unsubscribe();
   }
@@ -97,8 +121,11 @@ export async function getDayForDate(dateKey) {
 // (services/sync.js, the only code that pushes signed-in writes) replays the
 // day to Supabase — so saves resolve instantly offline and sync on reconnect.
 export async function saveDayForDate(dateKey, sessions) {
-  if (isGuestMode()) return localSaveDay(dateKey, sessions);
-  cacheStore.saveDay(dateKey, sessions);
+  // Defensive: persisted exercises always carry canonical setEntries even if
+  // a caller slipped a legacy-shaped one into state.
+  const normalized = normalizeSessions(sessions);
+  if (isGuestMode()) return localSaveDay(dateKey, normalized);
+  cacheStore.saveDay(dateKey, normalized);
   enqueue({ type: "saveDay", dateKey });
 }
 
@@ -124,12 +151,9 @@ export async function pushDayToSupabase(dateKey, sessions, userId) {
       date: dateKey,
       session_id: s.id,
       name: e.name,
-      weight: e.weight === "" || e.weight == null ? null : Number(e.weight),
-      sets: Number(e.sets),
-      reps: Number(e.reps),
       notes: e.notes ?? "",
-      completed_reps: e.completedReps ?? [],
       position: i,
+      ...exerciseToDbFields(e),
     })),
   );
 

@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SaveStatus } from "@/components/SaveStatus/SaveStatus";
 import { SessionCard } from "@/components/SessionCard/SessionCard";
 import { DateNav } from "@/components/DateNav/DateNav";
 import { RestTimer } from "@/components/RestTimer/RestTimer";
@@ -10,18 +12,24 @@ import { SavedWorkouts } from "@/components/SavedWorkouts/SavedWorkouts";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog/AddExerciseDialog";
 import { toDateKey } from "@/lib/dates";
 import { getDayForDate, saveDayForDate } from "@/services/workouts";
-import { addSessionDuration } from "@/services/sessions";
+import { normalizeExercise } from "@/services/setEntries";
 import { getAllStatsRows } from "@/services/stats";
 import { buildPrBaselines, detectPrs, recordResult } from "@/services/prs";
+import { buildLastResults } from "@/services/progression";
 import { getWorkoutTimer } from "@/services/timer";
-import { useWorkoutTimer } from "@/hooks/useWorkoutTimer";
+import { enqueueWrite } from "@/services/writeQueue";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGlobalWorkoutTimer } from "@/contexts/WorkoutTimerContext";
+import { useSyncStatus } from "@/hooks/useSyncStatus";
 
-const makeExercise = (data) => ({
-  id: crypto.randomUUID(),
-  completedReps: [],
-  ...data,
-});
+// Every exercise entering state carries canonical setEntries (new, template,
+// and legacy-shaped data alike) — the UI never sees a legacy-only shape.
+const makeExercise = (data) =>
+  normalizeExercise({
+    id: crypto.randomUUID(),
+    completedReps: [],
+    ...data,
+  });
 
 const makeSession = (exercises = []) => ({
   id: crypto.randomUUID(),
@@ -38,54 +46,60 @@ export const WorkoutPage = () => {
   const dateKey = toDateKey(selectedDate);
   const isToday = dateKey === toDateKey(new Date());
 
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
+  const { pending, online } = useSyncStatus();
+  // In-flight local saves for the status line; the outbox `pending` count
+  // covers the slower half (reaching Supabase).
+  const [saving, setSaving] = useState(0);
+  // Loading a day must not immediately save it back: the no-op write would
+  // flash "Saving…" (and enqueue a pointless sync op) from merely viewing a
+  // date. Set per load, consumed by the autosave effect's first run.
+  const skipNextSaveRef = useRef(false);
 
   // State (not a ref) so the UI can hide the previous day's sessions while
   // the selected day loads — otherwise the stale list stays interactive and
   // any edit made mid-load is discarded by the incoming setSessions.
   const [loadedDate, setLoadedDate] = useState(null);
   const dayLoaded = loadedDate === dateKey;
-  // Saves must run one at a time: saveDayForDate deletes rows missing
-  // from the list it was given, so a save started with a stale list would
-  // delete rows a newer overlapping save just inserted.
-  const saveQueueRef = useRef(Promise.resolve());
 
-  // Timer stops go through the same save queue so a brand-new session's row
-  // is guaranteed to exist before its duration is written. Day-saves never
-  // write durations, so the optimistic state bump below can't be clobbered.
-  const onSaveDuration = useCallback(
-    (sessionId, timerDateKey, seconds) => {
-      const write = saveQueueRef.current.then(() =>
-        addSessionDuration(timerDateKey, sessionId, seconds),
+  // The timer lives app-wide (WorkoutTimerProvider) so it stays controllable
+  // from every page; its duration saves already run through the shared write
+  // queue. Day-saves never write durations, so the optimistic state bump
+  // below can't be clobbered.
+  const timer = useGlobalWorkoutTimer();
+  const { adoptSession, subscribeDurationSaved } = timer; // stable
+
+  useEffect(() => {
+    return subscribeDurationSaved(({ sessionId, dateKey: savedKey, seconds }) => {
+      if (savedKey !== dateKey) return;
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId
+            ? { ...s, durationSeconds: s.durationSeconds + seconds }
+            : s,
+        ),
       );
-      saveQueueRef.current = write.catch(() => {});
-      if (timerDateKey === dateKey) {
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === sessionId
-              ? { ...s, durationSeconds: s.durationSeconds + seconds }
-              : s,
-          ),
-        );
-      }
-      return write;
-    },
-    [dateKey],
-  );
+    });
+  }, [dateKey, subscribeDurationSaved]);
 
-  const timer = useWorkoutTimer({ onSaveDuration });
-  const adoptSession = timer.adoptSession; // stable
-
-  // PR baselines are fetched once per viewed day, then mutated: today's
+  // One history fetch per viewed day (historyRef) feeds both the PR
+  // baselines and the "last time" hints. Baselines are then mutated: today's
   // pre-edit results and every detected PR fold in via recordResult, so a
   // reopened dialog can't re-celebrate but a second heavier set can.
+  const historyRef = useRef(null);
   const baselinesRef = useRef(null);
+  // Tagged with the day they were built for; a mismatch (mid date-change)
+  // renders as "no hints" without needing a synchronous reset.
+  const [lastResults, setLastResults] = useState(null);
+  const lastResultsForDay =
+    lastResults?.dateKey === dateKey ? lastResults.map : null;
   const [celebratingId, setCelebratingId] = useState(null);
   const celebrateTimeoutRef = useRef(null);
 
   const checkForPrs = async (exercise, prevSessions) => {
     try {
-      baselinesRef.current ??= getAllStatsRows().then((rows) =>
+      historyRef.current ??= getAllStatsRows();
+      baselinesRef.current ??= historyRef.current.then((rows) =>
         buildPrBaselines(rows, dateKey),
       );
       const baselines = await baselinesRef.current;
@@ -115,7 +129,20 @@ export const WorkoutPage = () => {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    baselinesRef.current = null; // baselines are relative to the viewed day
+    // History (and everything derived from it) is relative to the viewed
+    // day. The fetch starts eagerly so "last time" hints arrive with the
+    // day instead of waiting for the first PR check.
+    baselinesRef.current = null;
+    historyRef.current = getAllStatsRows();
+    historyRef.current
+      .then((rows) => {
+        if (!cancelled) {
+          setLastResults({ dateKey, map: buildLastResults(rows, dateKey) });
+        }
+      })
+      .catch(() => {
+        // hints are best-effort; a failed fetch must never block the day
+      });
     getDayForDate(dateKey).then((items) => {
       if (cancelled) return;
       let day = items;
@@ -127,6 +154,10 @@ export const WorkoutPage = () => {
         if (!day.length) day = [makeSession()];
         adoptSession(day[0].id);
       }
+      // Only skip the initial autosave when the day is exactly what storage
+      // returned; a session synthesized for adoption above must be saved so
+      // its row exists before the timer credits time to it.
+      skipNextSaveRef.current = day === items;
       setSessions(day);
       setLoadedDate(dateKey);
     });
@@ -138,9 +169,14 @@ export const WorkoutPage = () => {
   useEffect(() => {
     if (!user) return;
     if (loadedDate !== dateKey) return;
-    saveQueueRef.current = saveQueueRef.current
-      .then(() => saveDayForDate(dateKey, sessions))
-      .catch((err) => console.error("Failed to save workout", err));
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+    setSaving((c) => c + 1);
+    enqueueWrite(() => saveDayForDate(dateKey, sessions))
+      .catch((err) => console.error("Failed to save workout", err))
+      .finally(() => setSaving((c) => c - 1));
   }, [sessions, dateKey, user, loadedDate]);
 
   const addExercise = (sessionId, data) => {
@@ -198,9 +234,13 @@ export const WorkoutPage = () => {
   };
 
   const editExercise = (sessionId, exerciseId, data) => {
-    // Reps saves and weight edits can both change the logged result (a weight
+    // Set logs and weight edits can both change the logged result (a weight
     // bump after logging reps is still a new best); other edits can't.
-    if (data.completedReps !== undefined || data.weight !== undefined) {
+    if (
+      data.setEntries !== undefined ||
+      data.completedReps !== undefined ||
+      data.weight !== undefined
+    ) {
       const prev = sessions
         .find((s) => s.id === sessionId)
         ?.exercises.find((e) => e.id === exerciseId);
@@ -256,7 +296,15 @@ export const WorkoutPage = () => {
       <RestTimer />
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">Sessions</h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-lg font-medium">Sessions</h2>
+            <SaveStatus
+              saving={saving}
+              pending={pending}
+              online={online}
+              isGuest={isGuest}
+            />
+          </div>
           {dayLoaded && (
             <SavedWorkouts
               dayExercises={sessions.flatMap((s) => s.exercises)}
@@ -268,7 +316,21 @@ export const WorkoutPage = () => {
           <p className="text-sm text-destructive">{timer.saveError}</p>
         )}
         {!dayLoaded ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          // Placeholder session cards; the real list stays hidden (and thus
+          // non-interactive) until the selected day's data is in.
+          <div className="space-y-4" aria-hidden>
+            {[0, 1].map((i) => (
+              <div key={i} className="space-y-4 rounded-xl border p-4 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <Skeleton className="h-8 w-28" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ))}
+          </div>
         ) : sessions.length > 0 ? (
           <>
             <AnimatePresence initial={false}>
@@ -280,6 +342,7 @@ export const WorkoutPage = () => {
                   isToday={isToday}
                   dateKey={dateKey}
                   celebratingId={celebratingId}
+                  lastResults={lastResultsForDay}
                   timer={timer}
                   onStartTimer={timer.start}
                   onPauseTimer={timer.pause}

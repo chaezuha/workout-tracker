@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { getDayForDate } from "@/services/workouts";
+import { summarizeEntries } from "@/services/setEntries";
 import { formatFriendly, fromDateKey, toDateKey } from "@/lib/dates";
 import { formatDuration } from "@/lib/time";
 
@@ -22,8 +23,7 @@ const DayExerciseRow = ({ exercise, highlighted }) => (
     <div className="flex items-center justify-between gap-3">
       <p className="font-medium">{exercise.name}</p>
       <p className="text-sm text-muted-foreground tabular-nums">
-        {exercise.sets} × {exercise.reps}
-        {exercise.weight !== "" && ` @ ${exercise.weight} lb`}
+        {summarizeEntries(exercise.setEntries)}
       </p>
     </div>
     {exercise.notes && (

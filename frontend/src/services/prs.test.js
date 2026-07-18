@@ -55,6 +55,28 @@ describe("buildPrBaselines", () => {
     const entry = baselines.get("bench press");
     expect(entry.bestOneRepMax).toBeCloseTo(100 * (1 + 5 / 30));
   });
+
+  it("scores per-set weights and never lets a warmup set a record", () => {
+    const baselines = buildPrBaselines(
+      [
+        row({
+          weight: 140,
+          sets: 3,
+          reps: 8,
+          completedReps: [1, 8, 6],
+          setEntries: [
+            { weight: 225, targetReps: 1, reps: 1, type: "warmup", rpe: null },
+            { weight: 140, targetReps: 8, reps: 8, type: "working", rpe: null },
+            { weight: 140, targetReps: 8, reps: 6, type: "working", rpe: null },
+          ],
+        }),
+      ],
+      "2026-07-06",
+    );
+    const entry = baselines.get("bench press");
+    expect(entry.bestWeight).toBe(140); // 225 warmup single excluded
+    expect(entry.bestOneRepMax).toBeCloseTo(140 * (1 + 8 / 30));
+  });
 });
 
 describe("detectPrs", () => {
