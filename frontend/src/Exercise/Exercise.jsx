@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
-import { Check, CopyPlus, Plus, X, GripVertical, Pencil, Trash2 } from "lucide-react";
+import { Check, Copy, Plus, X, GripVertical } from "@/components/ui/icons";
 import { OverflowMenu } from "@/components/ui/overflow-menu";
 import { loggedReps } from "@/services/stats";
 import {
@@ -29,9 +29,7 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  DialogHeaderBar,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { EntryRow } from "@/components/ui/entry-row";
@@ -279,15 +277,18 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">Log Sets</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent headerbar className="sm:max-w-xl">
           <form className="grid gap-4" onSubmit={submitLog}>
-            <DialogHeader>
-              <DialogTitle>{name}</DialogTitle>
-              <DialogDescription>
-                Log weight and reps for each set. Type and{" "}
-                {scale === "rpe" ? "RPE" : "RIR"} are optional.
-              </DialogDescription>
-            </DialogHeader>
+            <DialogHeaderBar
+              title={name}
+              subtitle="Log Sets"
+              start={<DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>}
+              end={<Button type="submit">Save</Button>}
+            />
+            <DialogDescription>
+              Log weight and reps for each set. Type and{" "}
+              {scale === "rpe" ? "RPE" : "RIR"} are optional.
+            </DialogDescription>
             <Button type="button" variant="ghost" size="sm" className="justify-self-start sm:hidden" onClick={toggleScale}>
               Effort: {scale === "rpe" ? "RPE" : "RIR"} · switch to {scale === "rpe" ? "RIR" : "RPE"}
             </Button>
@@ -300,11 +301,11 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   type="button"
                   onClick={toggleScale}
                   title="Switch between RPE and RIR"
-                  className="rounded text-left underline decoration-dotted underline-offset-2 hover:text-foreground pointer-coarse:min-h-11"
+                  className="rounded text-left underline decoration-dotted underline-offset-2 hover:text-foreground"
                 >
                   {scale === "rpe" ? "RPE" : "RIR"}
                 </button>
-                <span className="w-14 pointer-coarse:w-[5.5rem]" />
+                <span className="w-[3.75rem]" />
               </div>
               {rows.map((row, i) => (
                 <div
@@ -374,7 +375,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                       disabled={i === 0}
                       onClick={() => copyRowAbove(i)}
                     >
-                      <CopyPlus aria-hidden />
+                      <Copy aria-hidden />
                       <span className="sr-only">Copy set above</span>
                     </Button>
                     <Button
@@ -420,29 +421,25 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                 </Button>
               )}
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="sm:max-w-sm" onCloseAutoFocus={(event) => { event.preventDefault(); menuRef.current?.focus(); }}>
+          <DialogContent headerbar className="sm:max-w-sm" onCloseAutoFocus={(event) => { event.preventDefault(); menuRef.current?.focus(); }}>
           <form className="grid gap-5" onSubmit={submitEdit}>
-            <DialogHeader>
-              <DialogTitle>Edit Exercise</DialogTitle>
-              <DialogDescription>
-                Changes the plan. Sets you've already logged keep their values.
-              </DialogDescription>
-            </DialogHeader>
+            <DialogHeaderBar
+              title="Edit Exercise"
+              start={<DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>}
+              end={<Button type="submit">Save</Button>}
+            />
+            <DialogDescription>
+              Changes the plan. Sets you've already logged keep their values.
+            </DialogDescription>
             <div className="boxed-list">
               <EntryRow label="Name" htmlFor="name-1">
                 <Input id="name-1" name="name" defaultValue={name} required />
               </EntryRow>
-              <EntryRow inline label="Weight" unit="lb" htmlFor="weight-1">
+              <EntryRow inline label="Weight" spin={{ step: 5, min: 0 }} unit="lb" htmlFor="weight-1">
                 <Input
                   id="weight-1"
                   name="weight"
@@ -453,7 +450,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   defaultValue={weight ?? ""}
                 />
               </EntryRow>
-              <EntryRow inline label="Sets" htmlFor="set-1">
+              <EntryRow inline label="Sets" spin={{ step: 1, min: 1 }} htmlFor="set-1">
                 <Input
                   id="set-1"
                   name="sets"
@@ -464,7 +461,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   required
                 />
               </EntryRow>
-              <EntryRow inline label="Reps" htmlFor="rep-1">
+              <EntryRow inline label="Reps" spin={{ step: 1, min: 1 }} htmlFor="rep-1">
                 <Input
                   id="rep-1"
                   name="reps"
@@ -481,19 +478,13 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                 <Input id="notes-1" name="notes" defaultValue={notes} />
               </EntryRow>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
           </form>
           </DialogContent>
       </Dialog>
       <OverflowMenu label={`Actions for ${name}`} triggerRef={menuRef} actions={[
-        { label: "Edit Exercise", icon: Pencil, onSelect: () => setEditOpen(true) },
+        { label: "Edit Exercise", onSelect: () => setEditOpen(true) },
         "separator",
-        { label: "Delete Exercise", icon: Trash2, destructive: true, onSelect: () => onDelete(id) },
+        { label: "Delete Exercise", onSelect: () => onDelete(id) },
       ]} />
       </div>
         </div>

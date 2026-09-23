@@ -1,4 +1,4 @@
-import { Timer } from "lucide-react";
+import { Timer } from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";

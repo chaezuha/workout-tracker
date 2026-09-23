@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { ExerciseNameAutocomplete } from "@/components/ExerciseNameAutocomplete/ExerciseNameAutocomplete";
 import { getExerciseSuggestions } from "@/services/exercises";
@@ -7,9 +7,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  DialogHeaderBar,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { EntryRow } from "@/components/ui/entry-row";
@@ -64,11 +62,13 @@ export const AddExerciseDialog = ({ onAdd, trigger = "row" }) => {
           </button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent headerbar aria-describedby={undefined}>
         <form onSubmit={handleSubmit} className="grid gap-5">
-          <DialogHeader>
-            <DialogTitle>Add Exercise</DialogTitle>
-          </DialogHeader>
+          <DialogHeaderBar
+            title="Add Exercise"
+            start={<DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>}
+            end={<Button type="submit">Add</Button>}
+          />
           <div className="boxed-list">
             <EntryRow label="Name" htmlFor="add-name">
               <ExerciseNameAutocomplete
@@ -80,7 +80,7 @@ export const AddExerciseDialog = ({ onAdd, trigger = "row" }) => {
                 required
               />
             </EntryRow>
-            <EntryRow inline label="Weight" htmlFor="add-weight" unit="lb">
+            <EntryRow inline label="Weight" spin={{ step: 5, min: 0 }} htmlFor="add-weight" unit="lb">
               <Input
                 id="add-weight"
                 type="number"
@@ -91,7 +91,7 @@ export const AddExerciseDialog = ({ onAdd, trigger = "row" }) => {
                 onChange={(e) => setWeight(e.target.value)}
               />
             </EntryRow>
-            <EntryRow inline label="Sets" htmlFor="add-sets">
+            <EntryRow inline label="Sets" spin={{ step: 1, min: 1 }} htmlFor="add-sets">
               <Input
                 id="add-sets"
                 type="number"
@@ -102,7 +102,7 @@ export const AddExerciseDialog = ({ onAdd, trigger = "row" }) => {
                 required
               />
             </EntryRow>
-            <EntryRow inline label="Reps" htmlFor="add-reps">
+            <EntryRow inline label="Reps" spin={{ step: 1, min: 1 }} htmlFor="add-reps">
               <Input
                 id="add-reps"
                 type="number"
@@ -123,12 +123,6 @@ export const AddExerciseDialog = ({ onAdd, trigger = "row" }) => {
               />
             </EntryRow>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit">Add</Button>
-          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

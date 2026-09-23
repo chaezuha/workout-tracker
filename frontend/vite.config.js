@@ -3,9 +3,14 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
+import { readFileSync } from "fs";
+
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Shown in the About dialog.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: {
     port: Number(process.env.PORT) || 5173,
   },

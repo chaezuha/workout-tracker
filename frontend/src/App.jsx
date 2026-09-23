@@ -108,7 +108,7 @@ const App = () => {
               description: "text-xs text-white/70",
               icon: "hidden",
               actionButton:
-                "shrink-0 rounded-full px-3 py-1.5 text-sm font-bold text-[#81d0ff] hover:bg-white/10",
+                "shrink-0 rounded-full px-3 py-1.5 text-sm font-bold text-[var(--accent-text-dark)] hover:bg-white/10",
               cancelButton:
                 "shrink-0 rounded-full px-3 py-1.5 text-sm font-bold hover:bg-white/10",
             },

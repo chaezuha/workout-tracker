@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { DropdownMenu } from "radix-ui";
-import { Menu, Check, Dumbbell, CalendarDays, ChartNoAxesCombined, Calculator, LogOut, LogIn, UserPlus } from "lucide-react";
+import { Menu, Check, Dumbbell, Calendar, Chart, Calculator } from "@/components/ui/icons";
 import { OverflowMenu } from "@/components/ui/overflow-menu";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
+import { AboutDialog } from "@/components/AboutDialog/AboutDialog";
+import { useHistoryCsv } from "@/components/HistoryCsv/useHistoryCsv";
+import { ACCENTS } from "@/lib/theme";
 import { HeaderSlotTarget } from "@/components/HeaderBar/HeaderSlot";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
@@ -11,8 +14,8 @@ import { useTheme } from "@/hooks/useTheme";
 
 const links = [
   { to: "/", label: "Workout", icon: Dumbbell },
-  { to: "/checkin", label: "Check-In", icon: CalendarDays },
-  { to: "/stats", label: "Stats", icon: ChartNoAxesCombined },
+  { to: "/checkin", label: "Check-In", icon: Calendar },
+  { to: "/stats", label: "Stats", icon: Chart },
   { to: "/calculators", label: "Calculators", icon: Calculator },
 ];
 
@@ -43,24 +46,56 @@ const StyleSwitcher = ({ theme, setTheme }) => (
   </DropdownMenu.RadioGroup>
 );
 
+// libadwaita's accent colors, as a row of swatches under the style switcher.
+const AccentSwitcher = ({ accent, setAccent }) => (
+  <DropdownMenu.RadioGroup value={accent} onValueChange={setAccent} aria-label="Accent color" className="grid grid-cols-9 justify-items-center gap-1 px-3 pb-2.5">
+    {ACCENTS.map(({ value, label, color }) => (
+      <DropdownMenu.RadioItem
+        key={value}
+        value={value}
+        aria-label={label}
+        title={label}
+        onSelect={(e) => e.preventDefault()}
+        style={{ backgroundColor: color }}
+        className="grid size-6 place-items-center rounded-full text-white outline-none focus-visible:shadow-[0_0_0_2px_var(--popover),0_0_0_4px_var(--ring)]"
+      >
+        <DropdownMenu.ItemIndicator>
+          <Check className="size-3.5" aria-hidden />
+        </DropdownMenu.ItemIndicator>
+      </DropdownMenu.RadioItem>
+    ))}
+  </DropdownMenu.RadioGroup>
+);
+
 // AdwHeaderBar: page actions at the start, the view switcher (desktop) or the
 // window title (phones) in the middle, the main menu at the end. On phones the
 // switcher moves to a bottom bar, as AdwViewSwitcherBar does.
 export const NavBar = () => {
   const { user, isGuest, signOut } = useAuth();
   const { pending, online } = useSyncStatus();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, accent, setAccent } = useTheme();
+  const csv = useHistoryCsv();
+  const [aboutOpen, setAboutOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const accountRef = useRef(null);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const syncLabel = !online ? (pending ? `Offline · ${pending} pending` : "Offline") : pending ? `${pending} pending` : null;
   const title = links.find(({ to }) => to === pathname)?.label ?? "Workout Tracker";
-  const actions = isGuest ? [
-    { label: "Sign Up", icon: UserPlus, onSelect: () => navigate("/auth?mode=signup") },
-    { label: "Sign In", icon: LogIn, onSelect: () => navigate("/auth?mode=signin") },
+  const accountActions = isGuest ? [
+    { label: "Sign Up", onSelect: () => navigate("/auth?mode=signup") },
+    { label: "Sign In", onSelect: () => navigate("/auth?mode=signin") },
   ] : [
-    { label: "Sign Out", icon: LogOut, onSelect: () => pending > 0 ? setConfirmSignOut(true) : signOut() },
+    { label: "Sign Out", onSelect: () => pending > 0 ? setConfirmSignOut(true) : signOut() },
+  ];
+  const actions = [
+    "separator",
+    { label: "Import History…", onSelect: csv.importCsv, disabled: csv.busy, immediate: true },
+    { label: "Export History…", onSelect: csv.exportCsv, disabled: csv.busy },
+    "separator",
+    ...accountActions,
+    "separator",
+    { label: "About Workout Tracker", onSelect: () => setAboutOpen(true) },
   ];
 
   return (
@@ -83,8 +118,9 @@ export const NavBar = () => {
           </nav>
           <div className="flex min-w-0 items-center gap-2 justify-self-end">
             {syncLabel && <span className="hidden truncate text-xs text-muted-foreground sm:inline" role="status">{syncLabel}</span>}
-            <OverflowMenu label="Main menu" heading={isGuest ? "Guest (this browser only)" : user.email} icon={Menu} triggerRef={accountRef} actions={["separator", ...actions]}>
+            <OverflowMenu label="Main menu" heading={isGuest ? "Guest (this browser only)" : user.email} icon={Menu} triggerRef={accountRef} actions={actions}>
               <StyleSwitcher theme={theme} setTheme={setTheme} />
+              <AccentSwitcher accent={accent} setAccent={setAccent} />
             </OverflowMenu>
           </div>
         </div>
@@ -98,6 +134,8 @@ export const NavBar = () => {
           </NavLink>
         ))}
       </nav>
+      {csv.elements}
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} restoreFocusRef={accountRef} />
       <ConfirmDialog open={confirmSignOut} onOpenChange={setConfirmSignOut} restoreFocusRef={accountRef}
         title="Sign Out With Unsynced Changes?"
         description={`${pending} ${pending === 1 ? "change hasn't" : "changes haven't"} reached your account yet. They only sync if this device reconnects, so signing out now risks losing them.`}

@@ -2,7 +2,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
+import { X } from "@/components/ui/icons";
 
 function Dialog({
   ...props
@@ -52,11 +52,14 @@ const contentVariants = {
     "top-1/2 left-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl p-6 duration-200 data-open:zoom-in-95 data-closed:zoom-out-95",
 }
 
+// headerbar: the content starts with a <DialogHeaderBar> (AdwDialog's
+// header bar), so the top padding and the floating close button go away.
 function DialogContent({
   className,
   children,
   showCloseButton = true,
   variant = "sheet",
+  headerbar = false,
   ...props
 }) {
   return (
@@ -68,6 +71,7 @@ function DialogContent({
         className={cn(
           "group/dialog fixed z-50 grid grid-cols-[minmax(0,1fr)] [&>*]:min-w-0 gap-4 overflow-y-auto overscroll-contain bg-dialog text-popover-foreground shadow-[var(--dialog-shadow)] outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           contentVariants[variant],
+          headerbar && "pt-3 sm:pt-0",
           className
         )}
         {...props}>
@@ -75,16 +79,52 @@ function DialogContent({
           <div aria-hidden className="absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-fill-active sm:hidden" />
         )}
         {children}
-        {showCloseButton && variant === "sheet" && (
+        {showCloseButton && variant === "sheet" && !headerbar && (
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
             <Button variant="ghost" shape="circular" className="absolute top-3.5 right-3 sm:top-3" size="icon-sm">
-              <XIcon />
+              <X />
               <span className="sr-only">Close</span>
             </Button>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
     </DialogPortal>
+  );
+}
+
+// AdwDialog's header bar: flat buttons at either end (e.g. Cancel and a
+// suggested Save), the title centered between them. It sticks to the top
+// while the dialog body scrolls, and bleeds to the content's edges.
+function DialogHeaderBar({
+  start,
+  end,
+  title,
+  subtitle,
+  className,
+}) {
+  return (
+    <div
+      data-slot="dialog-headerbar"
+      className={cn("sticky top-0 z-10 -mx-5 grid min-h-[47px] grid-cols-[1fr_auto_1fr] items-center gap-2 bg-dialog px-1.5 sm:px-2", className)}>
+      <div className="flex min-w-0 items-center gap-1.5 justify-self-start">{start}</div>
+      <div className="min-w-0 text-center">
+        <DialogTitle className="truncate text-[0.9375rem] leading-tight">{title}</DialogTitle>
+        {subtitle && <p className="truncate text-xs leading-tight text-muted-foreground">{subtitle}</p>}
+      </div>
+      <div className="flex min-w-0 items-center gap-1.5 justify-self-end">{end}</div>
+    </div>
+  );
+}
+
+// A header-bar end button that closes the dialog (view-only dialogs).
+function DialogHeaderClose() {
+  return (
+    <DialogPrimitive.Close data-slot="dialog-close" asChild>
+      <Button variant="ghost" shape="circular" size="icon">
+        <X />
+        <span className="sr-only">Close</span>
+      </Button>
+    </DialogPrimitive.Close>
   );
 }
 
@@ -159,6 +199,8 @@ export {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogHeaderBar,
+  DialogHeaderClose,
   DialogOverlay,
   DialogPortal,
   DialogTitle,

@@ -1,5 +1,5 @@
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { X } from "lucide-react";
+import { X } from "@/components/ui/icons";
 
 // Shown when a new service worker is waiting (registerType: "prompt" in
 // vite.config.js): the user picks when to reload instead of silently running

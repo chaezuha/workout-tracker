@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EntryRow } from "@/components/ui/entry-row";
@@ -88,7 +88,7 @@ export function AuthForm() {
         {message && <p className="text-center text-sm text-muted-foreground">{message}</p>}
 
         <Button type="submit" size="pill" disabled={submitting} className="mx-auto min-w-48">
-          {submitting ? <Loader2 className="animate-spin" aria-label="Working" /> : isSignup ? "Sign Up" : "Sign In"}
+          {submitting ? <Spinner className="animate-spin" aria-label="Working" /> : isSignup ? "Sign Up" : "Sign In"}
         </Button>
       </form>
 

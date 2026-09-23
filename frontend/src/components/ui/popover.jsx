@@ -14,10 +14,23 @@ function PopoverTrigger({
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
+// GtkPopover's arrow: a small notch in the popover color pointing at the
+// trigger. `as` takes the Arrow part of whichever Radix primitive hosts it.
+function PopoverArrow({ as: Arrow = PopoverPrimitive.Arrow }) {
+  return (
+    <Arrow
+      width={18}
+      height={8}
+      className="fill-popover drop-shadow-[0_1px_0_rgb(0_0_6/8%)] dark:drop-shadow-[0_1px_0_rgb(0_0_6/50%)]"
+    />
+  );
+}
+
 function PopoverContent({
   className,
   align = "center",
   sideOffset = 4,
+  children,
   ...props
 }) {
   return (
@@ -30,7 +43,10 @@ function PopoverContent({
           "z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-2.5 rounded-xl bg-popover p-3 text-sm text-popover-foreground shadow-[var(--popover-shadow)] outline-hidden duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
-        {...props} />
+        {...props}>
+        <PopoverArrow />
+        {children}
+      </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>
   );
 }
@@ -80,6 +96,7 @@ function PopoverDescription({
 export {
   Popover,
   PopoverAnchor,
+  PopoverArrow,
   PopoverContent,
   PopoverDescription,
   PopoverHeader,

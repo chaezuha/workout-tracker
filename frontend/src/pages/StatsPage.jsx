@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChartNoAxesCombined, ChevronRight } from "lucide-react";
+import { Chart, ChevronRight } from "@/components/ui/icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { HeaderActions } from "@/components/HeaderBar/HeaderSlot";
 import {
   RANGE_OPTIONS,
   aggregateSessionTotals,
@@ -19,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExerciseHistoryDialog } from "@/components/ExerciseHistoryDialog/ExerciseHistoryDialog";
-import { HistoryCsvControls } from "@/components/HistoryCsv/HistoryCsvControls";
+import { HISTORY_IMPORTED_EVENT } from "@/components/HistoryCsv/useHistoryCsv";
 
 const SummaryCard = ({ value, label }) => (
   <div className="min-w-0 bg-card px-4 py-3.5 first:col-span-2 sm:first:col-span-1 sm:last:col-span-2">
@@ -30,7 +29,7 @@ const SummaryCard = ({ value, label }) => (
 
 const StatusPage = ({ title, children }) => (
   <div className="status-page">
-    <ChartNoAxesCombined className="status-page-icon" aria-hidden />
+    <Chart className="status-page-icon" aria-hidden />
     <h2 className="title-1">{title}</h2>
     <p>{children}</p>
   </div>
@@ -65,6 +64,13 @@ export const StatsPage = () => {
       cancelled = true;
     };
   }, [user, reloadKey]);
+
+  // Imports run from the main menu; reload so they show up.
+  useEffect(() => {
+    const onImported = () => setReloadKey((k) => k + 1);
+    window.addEventListener(HISTORY_IMPORTED_EVENT, onImported);
+    return () => window.removeEventListener(HISTORY_IMPORTED_EVENT, onImported);
+  }, []);
 
   const stats = useMemo(
     () => (rows ? aggregateStats(filterRowsByRange(rows, range)) : null),
@@ -145,25 +151,28 @@ export const StatsPage = () => {
   return (
     <div className="page-content">
       <h1 className="sr-only">Stats</h1>
-      <HeaderActions>
-        <HistoryCsvControls onImported={() => setReloadKey((k) => k + 1)} />
-      </HeaderActions>
       {showRangeSelect && (
         <section className="pref-group" aria-labelledby="overview-title">
-          <div className="group-header items-center">
+          <div className="group-header">
             <h2 id="overview-title" className="group-title">Overview</h2>
-            <Select value={range} onValueChange={setRange}>
-              <SelectTrigger aria-label="Time range">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {RANGE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          </div>
+          {/* AdwComboRow: the choice sits flat at the end of the row. */}
+          <div className="boxed-list">
+            <div className="row">
+              <span id="range-label" className="row-body">Time Range</span>
+              <Select value={range} onValueChange={setRange}>
+                <SelectTrigger aria-labelledby="range-label" className="-mr-1.5 bg-transparent font-normal">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {RANGE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           {stats.exercises.length > 0 && (
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-separator shadow-[var(--card-shadow)] sm:grid-cols-3">

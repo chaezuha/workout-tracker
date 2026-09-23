@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Flame, CalendarCheck } from "lucide-react";
+import { Check } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -22,13 +22,11 @@ const computeStreak = (keys) => {
   return streak;
 };
 
-const StatTile = ({ icon: Icon, value, label, tone }) => (
-  <div className="flex items-center gap-3 bg-card px-4 py-3.5">
-    <Icon className={`size-6 shrink-0 ${tone}`} aria-hidden />
-    <div>
-      <p className="title-2 numeric leading-tight">{value}</p>
-      <p className="caption dim">{label}</p>
-    </div>
+// An AdwActionRow with the number as its suffix.
+const StatRow = ({ value, label }) => (
+  <div className="row">
+    <span className="row-body">{label}</span>
+    <span className="title-4 numeric">{value}</span>
   </div>
 );
 
@@ -67,15 +65,15 @@ export const CheckinCalendar = () => {
     <div className="space-y-8">
       <h1 className="sr-only">Daily Check-In</h1>
       {error && <p className="text-center text-sm text-destructive">{error}</p>}
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-separator shadow-[var(--card-shadow)]">
-        <StatTile icon={Flame} tone="text-warning" value={streak} label="Day streak" />
-        <StatTile icon={CalendarCheck} tone="text-accent-text" value={monthCount} label="This month" />
+      <div className="boxed-list">
+        <StatRow value={streak} label="Day Streak" />
+        <StatRow value={monthCount} label="This Month" />
       </div>
       <div className="overflow-hidden rounded-xl bg-card shadow-[var(--card-shadow)]">
         <Calendar
           modifiers={{ checkedIn: checkinKeys.map(fromDateKey) }}
           modifiersClassNames={{ checkedIn: "day-checked-in" }}
-          className="w-full p-3 sm:p-5 [--cell-size:clamp(2rem,10vw,2.75rem)] [&_.rdp-day]:flex [&_.rdp-day]:items-center [&_.rdp-day]:justify-center [&_.rdp-day]:text-sm"
+          className="w-full p-3 sm:p-5 [--cell-size:clamp(2rem,10vw,2.75rem)] [&_.rdp-day]:flex [&_.rdp-day]:h-(--cell-size) [&_.rdp-day]:items-center [&_.rdp-day]:justify-center [&_.rdp-day]:text-sm"
           classNames={{
             root: "w-full",
             caption_label: "text-base font-bold",

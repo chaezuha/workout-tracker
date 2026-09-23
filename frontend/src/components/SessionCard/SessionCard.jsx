@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Pause, Pencil, Play, Square, Trash2 } from "lucide-react";
+import { Pause, Play, Stop } from "@/components/ui/icons";
 import { motion } from "motion/react";
 import {
   DndContext,
@@ -84,7 +84,7 @@ export const SessionCard = ({
       <Button
         type="button"
         size="sm"
-        variant="outline"
+        variant="ghost"
         disabled={otherTimerActive}
         title={otherTimerActive ? "Another session's timer is running" : undefined}
         onClick={() => onStartTimer(session.id, displayName)}
@@ -94,7 +94,7 @@ export const SessionCard = ({
     ) : (
       <>
         {timer.status === "running" ? (
-          <Button type="button" size="sm" variant="outline" onClick={onPauseTimer}>
+          <Button type="button" size="sm" variant="ghost" onClick={onPauseTimer}>
             <Pause aria-hidden /> Pause
           </Button>
         ) : (
@@ -104,8 +104,8 @@ export const SessionCard = ({
         )}
         <ConfirmDialog
           trigger={
-            <Button type="button" size="sm" variant="outline">
-              <Square aria-hidden /> Stop
+            <Button type="button" size="sm" variant="ghost">
+              <Stop aria-hidden /> Stop
             </Button>
           }
           title="Stop Timer?"
@@ -172,8 +172,8 @@ export const SessionCard = ({
             {timerControls}
             <ShareSessionButton session={session} dateKey={dateKey} menu={{
               label: `Actions for ${displayName}`, triggerRef: menuRef, canShare: hasLoggedReps,
-              before: [{ label: "Rename Session", icon: Pencil, onSelect: () => { setNameDraft(session.name ?? ""); setEditingName(true); } }],
-              after: ["separator", { label: "Delete Session", icon: Trash2, destructive: true, onSelect: () => setDeleteOpen(true) }],
+              before: [{ label: "Rename Session", onSelect: () => { setNameDraft(session.name ?? ""); setEditingName(true); } }],
+              after: ["separator", { label: "Delete Session", onSelect: () => setDeleteOpen(true) }],
             }} />
             <ConfirmDialog
               open={deleteOpen} onOpenChange={setDeleteOpen} restoreFocusRef={menuRef}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,7 +113,7 @@ export const GuestMigrationPrompt = () => {
               <Button disabled={migrating} onClick={handleImport}>
                 {migrating ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden />
+                    <Spinner className="animate-spin" aria-hidden />
                     Importing…
                   </>
                 ) : (

@@ -183,7 +183,7 @@ export const CalculatorsPage = () => {
                 <h2 id="total-bar" className="group-title">Bar and Plates</h2>
               </div>
               <div className="boxed-list">
-                <EntryRow inline label="Barbell" htmlFor="plate-barbell-weight" unit="lb">
+                <EntryRow inline label="Barbell" spin={{ step: 5, min: 0 }} htmlFor="plate-barbell-weight" unit="lb">
                   <Input
                     id="plate-barbell-weight"
                     type="number"
@@ -212,7 +212,7 @@ export const CalculatorsPage = () => {
                   {weights.map(
                     (w, i) =>
                       selectedPlates.includes(w) && (
-                        <EntryRow key={w} inline label={`${w} lb`} htmlFor={`plate-${w}`} unit="×">
+                        <EntryRow key={w} inline label={`${w} lb Plates`} htmlFor={`plate-${w}`} spin={{ step: 1, min: 0 }}>
                           <Input
                             id={`plate-${w}`}
                             type="number"
@@ -242,7 +242,7 @@ export const CalculatorsPage = () => {
                 <h2 id="load-target" className="group-title">Target</h2>
               </div>
               <div className="boxed-list">
-                <EntryRow inline label="Desired weight" htmlFor="desired-weight" unit="lb">
+                <EntryRow inline label="Desired weight" spin={{ step: 5, min: 0 }} htmlFor="desired-weight" unit="lb">
                   <Input
                     id="desired-weight"
                     type="number"
@@ -253,7 +253,7 @@ export const CalculatorsPage = () => {
                     required
                   />
                 </EntryRow>
-                <EntryRow inline label="Barbell" htmlFor="barbell-weight" unit="lb">
+                <EntryRow inline label="Barbell" spin={{ step: 5, min: 0 }} htmlFor="barbell-weight" unit="lb">
                   <Input
                     id="barbell-weight"
                     type="number"

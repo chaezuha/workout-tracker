@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { ExerciseNameAutocomplete } from "@/components/ExerciseNameAutocomplete/ExerciseNameAutocomplete";
 import { getExerciseSuggestions } from "@/services/exercises";
 import {
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  DialogHeaderBar,
 } from "@/components/ui/dialog";
 import { EntryRow } from "@/components/ui/entry-row";
 import { Input } from "@/components/ui/input";
@@ -90,9 +88,11 @@ export const TemplateEditor = ({
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-5">
-      <DialogHeader>
-        <DialogTitle>{initialName ? "Edit Workout" : "New Workout"}</DialogTitle>
-      </DialogHeader>
+      <DialogHeaderBar
+        title={initialName ? "Edit Workout" : "New Workout"}
+        start={<Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>}
+        end={<Button type="submit" disabled={name.trim() === "" || rows.length === 0}>Save</Button>}
+      />
       <div className="boxed-list">
         <EntryRow label="Workout name" htmlFor="template-name">
           <Input
@@ -117,7 +117,7 @@ export const TemplateEditor = ({
               className="hover:text-destructive"
               onClick={() => removeRow(row.key)}
             >
-              <Trash2 aria-hidden />
+              <Trash aria-hidden />
             </Button>
           </div>
           <div className="boxed-list">
@@ -131,7 +131,7 @@ export const TemplateEditor = ({
                 required
               />
             </EntryRow>
-            <EntryRow inline label="Weight" unit="lb" htmlFor={`ex-weight-${row.key}`}>
+            <EntryRow inline label="Weight" spin={{ step: 5, min: 0 }} unit="lb" htmlFor={`ex-weight-${row.key}`}>
               <Input
                 id={`ex-weight-${row.key}`}
                 type="number"
@@ -142,7 +142,7 @@ export const TemplateEditor = ({
                 onChange={(e) => updateRow(row.key, "weight", e.target.value)}
               />
             </EntryRow>
-            <EntryRow inline label="Sets" htmlFor={`ex-sets-${row.key}`}>
+            <EntryRow inline label="Sets" spin={{ step: 1, min: 1 }} htmlFor={`ex-sets-${row.key}`}>
               <Input
                 id={`ex-sets-${row.key}`}
                 type="number"
@@ -153,7 +153,7 @@ export const TemplateEditor = ({
                 required
               />
             </EntryRow>
-            <EntryRow inline label="Reps" htmlFor={`ex-reps-${row.key}`}>
+            <EntryRow inline label="Reps" spin={{ step: 1, min: 1 }} htmlFor={`ex-reps-${row.key}`}>
               <Input
                 id={`ex-reps-${row.key}`}
                 type="number"
@@ -180,14 +180,6 @@ export const TemplateEditor = ({
         </button>
       </div>
       {error && <p className="text-destructive text-sm">{error}</p>}
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={name.trim() === "" || rows.length === 0}>
-          Save Workout
-        </Button>
-      </DialogFooter>
     </form>
   );
 };

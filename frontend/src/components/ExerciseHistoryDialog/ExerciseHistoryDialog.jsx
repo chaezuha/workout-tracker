@@ -3,8 +3,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  DialogHeaderBar,
+  DialogHeaderClose,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { getDayForDate } from "@/services/workouts";
@@ -51,13 +51,11 @@ const ExerciseHistory = ({ exercise }) => {
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>{exercise.name}</DialogTitle>
-        <DialogDescription>
-          Trained on {exercise.days} {exercise.days === 1 ? "day" : "days"}.
-          Pick a marked day to see that workout.
-        </DialogDescription>
-      </DialogHeader>
+      <DialogHeaderBar title={exercise.name} subtitle="History" end={<DialogHeaderClose />} />
+      <DialogDescription>
+        Trained on {exercise.days} {exercise.days === 1 ? "day" : "days"}.
+        Pick a marked day to see that workout.
+      </DialogDescription>
       <Calendar
         mode="single"
         className="mx-auto rounded-xl shadow-[var(--card-shadow)]"
@@ -128,7 +126,7 @@ const ExerciseHistory = ({ exercise }) => {
 export const ExerciseHistoryDialog = ({ exercise, onOpenChange }) => (
   <Dialog open={!!exercise} onOpenChange={onOpenChange}>
     {exercise && (
-      <DialogContent>
+      <DialogContent headerbar>
         <ExerciseHistory key={exercise.key} exercise={exercise} />
       </DialogContent>
     )}

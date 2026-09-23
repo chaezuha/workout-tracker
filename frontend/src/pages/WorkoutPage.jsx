@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Dumbbell, Plus } from "lucide-react";
+import { Dumbbell, Plus } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { HeaderActions } from "@/components/HeaderBar/HeaderSlot";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +23,7 @@ import { enqueueWrite } from "@/services/writeQueue";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGlobalWorkoutTimer } from "@/contexts/WorkoutTimerContext";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { HISTORY_IMPORTED_EVENT } from "@/components/HistoryCsv/useHistoryCsv";
 
 // Every exercise entering state carries canonical setEntries (new, template,
 // and legacy-shaped data alike) — the UI never sees a legacy-only shape.
@@ -63,6 +64,15 @@ export const WorkoutPage = () => {
   // any edit made mid-load is discarded by the incoming setSessions.
   const [loadedDate, setLoadedDate] = useState(null);
   const dayLoaded = loadedDate === dateKey;
+  // Bumped when a CSV import (main menu) lands: an import can fill the day
+  // on screen if it was empty, and the stale empty list must not autosave
+  // over it.
+  const [reloadKey, setReloadKey] = useState(0);
+  useEffect(() => {
+    const onImported = () => setReloadKey((k) => k + 1);
+    window.addEventListener(HISTORY_IMPORTED_EVENT, onImported);
+    return () => window.removeEventListener(HISTORY_IMPORTED_EVENT, onImported);
+  }, []);
 
   // The timer lives app-wide (WorkoutTimerProvider) so it stays controllable
   // from every page; its duration saves already run through the shared write
@@ -166,7 +176,7 @@ export const WorkoutPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [dateKey, user, adoptSession]);
+  }, [dateKey, user, adoptSession, reloadKey]);
 
   useEffect(() => {
     if (!user) return;

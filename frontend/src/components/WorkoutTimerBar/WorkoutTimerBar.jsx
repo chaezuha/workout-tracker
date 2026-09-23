@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Timer } from "lucide-react";
+import { Timer } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import { useGlobalWorkoutTimer } from "@/contexts/WorkoutTimerContext";

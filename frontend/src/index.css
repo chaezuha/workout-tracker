@@ -60,7 +60,8 @@
     --radius-4xl: 24px;
 }
 
-/* libadwaita 1.6 palette. */
+/* libadwaita 1.6 palette. The accent (--primary) is swappable via
+   data-accent on <html>; everything accent-tinted derives from it. */
 :root {
     --background: #fafafb;
     --foreground: #323233;
@@ -76,9 +77,13 @@
     --secondary-foreground: #323233;
     --muted: #ebebed;
     --muted-foreground: #6e6e73;
-    --accent: #e1ecfb;
-    --accent-foreground: #0461be;
-    --accent-text: #0461be;
+    --accent: color-mix(in srgb, var(--primary) 15%, var(--card));
+    /* Accent-colored text: libadwaita darkens the accent for light
+       surfaces and lightens it for dark ones (the toast is always dark). */
+    --accent-text-light: color-mix(in srgb, var(--primary), black 25%);
+    --accent-text-dark: color-mix(in srgb, var(--primary), white 45%);
+    --accent-text: var(--accent-text-light);
+    --accent-foreground: var(--accent-text);
     --destructive: #c30000;
     --destructive-bg: #e01b24;
     --success: #007c3d;
@@ -89,11 +94,11 @@
     --fill: rgb(0 0 6 / 8%);
     --fill-hover: rgb(0 0 6 / 12%);
     --fill-active: rgb(0 0 6 / 20%);
-    --ring: rgb(53 132 228 / 50%);
+    --ring: color-mix(in srgb, var(--primary) 50%, transparent);
     --card-shadow: 0 0 0 1px rgb(0 0 6 / 3%), 0 1px 3px 1px rgb(0 0 6 / 7%), 0 2px 6px 2px rgb(0 0 6 / 3%);
     --popover-shadow: 0 0 0 1px rgb(0 0 6 / 8%), 0 2px 8px 2px rgb(0 0 6 / 12%);
     --dialog-shadow: 0 0 0 1px rgb(0 0 6 / 5%), 0 4px 24px 4px rgb(0 0 6 / 18%);
-    --chart-1: #3584e4;
+    --chart-1: var(--primary);
     --chart-2: #2ec27e;
     --chart-3: #e5a50a;
     --chart-4: #9141ac;
@@ -118,9 +123,8 @@
     --secondary-foreground: #ffffff;
     --muted: #3a3a3e;
     --muted-foreground: #a6a6ab;
-    --accent: #263a55;
-    --accent-foreground: #81d0ff;
-    --accent-text: #81d0ff;
+    --accent: color-mix(in srgb, var(--primary) 25%, var(--card));
+    --accent-text: var(--accent-text-dark);
     --destructive: #ff938c;
     --destructive-bg: #e01b24;
     --success: #78e9ab;
@@ -131,16 +135,34 @@
     --fill: rgb(255 255 255 / 10%);
     --fill-hover: rgb(255 255 255 / 15%);
     --fill-active: rgb(255 255 255 / 25%);
-    --ring: rgb(53 132 228 / 60%);
+    --ring: color-mix(in srgb, var(--primary) 60%, transparent);
     --card-shadow: 0 0 0 1px rgb(0 0 6 / 36%), 0 1px 3px 1px rgb(0 0 6 / 12%), 0 2px 6px 2px rgb(0 0 6 / 8%);
     --popover-shadow: 0 0 0 1px rgb(0 0 6 / 50%), 0 2px 8px 2px rgb(0 0 6 / 30%);
     --dialog-shadow: 0 0 0 1px rgb(0 0 6 / 50%), 0 4px 24px 4px rgb(0 0 6 / 40%);
-    --chart-1: #62a0ea;
+    --chart-1: color-mix(in srgb, var(--primary), white 20%);
     --chart-2: #57e389;
     --chart-3: #f8e45c;
     --chart-4: #c061cb;
     --chart-5: #a6a6ab;
 }
+
+@supports (color: oklch(from red l c h)) {
+  :root {
+    --accent-text-light: oklch(from var(--primary) min(l, 0.5) c h);
+    --accent-text-dark: oklch(from var(--primary) max(l, 0.85) c h);
+  }
+}
+
+/* libadwaita 1.6 accent colors (blue is the default above). Set on <html>
+   by the inline script in index.html and useTheme. */
+:root[data-accent="teal"] { --primary: #2190a4; }
+:root[data-accent="green"] { --primary: #3a944a; }
+:root[data-accent="yellow"] { --primary: #c88800; }
+:root[data-accent="orange"] { --primary: #ed5b00; }
+:root[data-accent="red"] { --primary: #e62d42; }
+:root[data-accent="pink"] { --primary: #d56199; }
+:root[data-accent="purple"] { --primary: #9141ac; }
+:root[data-accent="slate"] { --primary: #6f8396; }
 
 @layer base {
   * {
@@ -162,14 +184,39 @@
     outline-width: 2px;
     outline-offset: 1px;
   }
+  /* Thin, translucent overlay-style scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--foreground) 30%, transparent) transparent;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--foreground) 30%, transparent) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--foreground) 45%, transparent); }
 }
 
-.day-checked-in {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
+/* Calendar marks, drawn as a circle (the cell's height, at most
+   --cell-size) behind the day number so they stay round however wide the
+   cell is: today gets an accent ring,
+   checked-in days a filled accent circle. */
+.rdp-today, .day-checked-in { isolation: isolate; }
+.rdp-today::before, .day-checked-in::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  height: min(100%, var(--cell-size));
+  aspect-ratio: 1;
+  translate: -50% -50%;
   border-radius: 9999px;
-  font-weight: 700;
 }
+.rdp-today::before { box-shadow: inset 0 0 0 2px var(--primary); }
+.day-checked-in { color: var(--primary-foreground); font-weight: 700; }
+.day-checked-in::before { background-color: var(--primary); }
 
 .day-has-workout::after {
   content: "";
@@ -291,10 +338,24 @@
 .linked > *:not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .linked > *:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 1px; }
 
-@media (max-width: 639px), (pointer: coarse) {
-  [data-size][data-variant]:not([data-size="xs"]), [data-slot="select-trigger"], [data-slot="input"],
+/* Touch: controls keep Adwaita's drawn size, but an invisible ::after grows
+   the tap area to ~44px tall. Vertical only, so side-by-side buttons (linked
+   groups, icon pairs) never steal each other's taps. Calendar days are a
+   packed grid and keep their own size. List items (menu/select) just get
+   taller. Buttons are matched by data-variant/data-size because Radix
+   triggers overwrite their data-slot. */
+@layer components {
+  /* Layered, so utilities like `absolute` (the dialog close button) win. */
+  @media (pointer: coarse) {
+    [data-variant][data-size]:not([data-day]), [data-slot="select-trigger"] { position: relative; }
+  }
+}
+@media (pointer: coarse) {
+  [data-variant][data-size]:not([data-day])::after, [data-slot="select-trigger"]::after {
+    content: ""; position: absolute; inset: -5px 0;
+  }
+  [data-variant][data-size$="xs"]::after { inset: -10px 0; }
   [data-slot="menu-item"], [data-slot="select-item"] { min-height: 44px; }
-  [data-variant][data-size^="icon"]:not([data-day]) { min-width: 44px; }
 }
 @media (min-width: 640px) { :root { --mobile-nav-height: 0px; } }
 @media (prefers-reduced-motion: reduce) {

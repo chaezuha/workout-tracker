@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,11 +21,16 @@ import { toDateKey } from "@/lib/dates";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-// CSV export/import of the full workout history. Export ignores the stats
-// range filter on purpose — a backup should be complete. Import never touches
-// dates that already have data (planImport), so re-importing an export can't
-// duplicate or overwrite anything.
-export const HistoryCsvControls = ({ onImported }) => {
+// Pages holding workout data listen for this and reload after an import.
+export const HISTORY_IMPORTED_EVENT = "history:imported";
+
+// CSV export/import of the full workout history, driven from the main menu.
+// Export is always the complete history — a backup should be complete.
+// Import never touches dates that already have data (planImport), so
+// re-importing an export can't duplicate or overwrite anything. `elements`
+// (the hidden file input and the confirm dialog) must be rendered by the
+// caller, outside any menu so they outlive it.
+export const useHistoryCsv = () => {
   const fileInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   // Parsed-and-planned import awaiting user confirmation; non-null opens the
@@ -104,7 +108,7 @@ export const HistoryCsvControls = ({ onImported }) => {
           ? `Imported ${plural(toImport.length, "date")}, skipped ${skippedDates.length}`
           : `Imported ${plural(toImport.length, "date")}`,
       );
-      onImported?.();
+      window.dispatchEvent(new Event(HISTORY_IMPORTED_EVENT));
     } catch (err) {
       console.error("CSV import failed", err);
       toast.error("Import stopped partway. Existing data wasn't changed.");
@@ -134,30 +138,8 @@ export const HistoryCsvControls = ({ onImported }) => {
     return parts.join(" ");
   };
 
-  return (
+  const elements = (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={busy}
-        aria-label="Import history from CSV"
-        title="Import history from CSV"
-      >
-        <Upload aria-hidden />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={exportCsv}
-        disabled={busy}
-        aria-label="Export history as CSV"
-        title="Export full history as CSV (ignores the range)"
-      >
-        <Download aria-hidden />
-      </Button>
       <input
         ref={fileInputRef}
         type="file"
@@ -183,4 +165,11 @@ export const HistoryCsvControls = ({ onImported }) => {
       </Dialog>
     </>
   );
+
+  return {
+    busy,
+    importCsv: () => fileInputRef.current?.click(),
+    exportCsv,
+    elements,
+  };
 };

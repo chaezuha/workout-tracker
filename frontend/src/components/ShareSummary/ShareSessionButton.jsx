@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { OverflowMenu } from "@/components/ui/overflow-menu";
-import { Share2 } from "lucide-react";
+import { Share } from "@/components/ui/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ShareSummaryCard } from "./ShareSummaryCard";
@@ -100,7 +100,7 @@ export const ShareSessionButton = ({ session, dateKey, menu }) => {
     <>
       {menu ? <OverflowMenu label={menu.label} triggerRef={menu.triggerRef} actions={[
         ...menu.before,
-        menu.canShare && { label: busy ? "Creating image…" : "Share Summary", icon: Share2, onSelect: share, disabled: busy },
+        menu.canShare && { label: busy ? "Creating image…" : "Share Summary", onSelect: share, disabled: busy },
         ...menu.after,
       ]} /> : <Button
         type="button"
@@ -111,7 +111,7 @@ export const ShareSessionButton = ({ session, dateKey, menu }) => {
         disabled={busy}
         aria-label="Share session summary"
       >
-        <Share2 />
+        <Share />
       </Button>}
       {summary && (
         <div className="fixed left-[-9999px] top-0" aria-hidden="true">

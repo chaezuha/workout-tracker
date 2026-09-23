@@ -1,4 +1,4 @@
-import { LibraryBig, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { Library, Plus, Save } from "@/components/ui/icons";
 import { OverflowMenu } from "@/components/ui/overflow-menu";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  DialogHeaderBar,
+  DialogHeaderClose,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -90,19 +90,17 @@ export const SavedWorkouts = ({ dayExercises, onLoadTemplate }) => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" variant="ghost" aria-label="Saved workouts" className="max-sm:w-11 max-sm:px-0">
-          <LibraryBig aria-hidden />
+          <Library aria-hidden />
           <span className="hidden sm:inline">Workouts</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent headerbar className="sm:max-w-md">
         {view === "list" ? (
           <>
-            <DialogHeader>
-              <DialogTitle>Saved Workouts</DialogTitle>
-              <DialogDescription>
-                Load one into the selected day, or save a new one.
-              </DialogDescription>
-            </DialogHeader>
+            <DialogHeaderBar title="Saved Workouts" end={<DialogHeaderClose />} />
+            <DialogDescription>
+              Load one into the selected day, or save a new one.
+            </DialogDescription>
             {error && <p className="text-destructive text-sm">{error}</p>}
             {templates.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
@@ -125,8 +123,8 @@ export const SavedWorkouts = ({ dayExercises, onLoadTemplate }) => {
                         Load
                       </Button>
                       <OverflowMenu label={`Actions for ${t.name}`} actions={[
-                        { label: "Edit Workout", icon: Pencil, onSelect: () => openEditor(t) },
-                        { label: "Delete Workout", icon: Trash2, destructive: true, onSelect: () => handleDelete(t) },
+                        { label: "Edit Workout", onSelect: () => openEditor(t) },
+                        { label: "Delete Workout", onSelect: () => handleDelete(t) },
                       ]} />
                     </div>
                   </li>
