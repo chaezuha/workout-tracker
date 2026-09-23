@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { getDatesWithWorkouts } from "@/services/workouts";
 import { addDays, formatFriendly, toDateKey, fromDateKey } from "@/lib/dates";
 
-export const DateNav = ({ selectedDate, onDateChange }) => {
+// Circular prev/next around a date title that opens a calendar; the
+// optional subtitle (save status) sits under it like AdwWindowTitle's.
+export const DateNav = ({ selectedDate, onDateChange, subtitle }) => {
   const isToday = toDateKey(selectedDate) === toDateKey(new Date());
   const [open, setOpen] = useState(false);
   const [workoutDays, setWorkoutDays] = useState([]);
@@ -33,18 +36,22 @@ export const DateNav = ({ selectedDate, onDateChange }) => {
         type="button"
         variant="outline"
         size="icon"
+        shape="circular"
         aria-label="Previous day"
         onClick={() => onDateChange(addDays(selectedDate, -1))}
       >
-        ←
+        <ChevronLeft aria-hidden />
       </Button>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-col items-center gap-0.5">
+      <div className="flex min-w-0 flex-wrap items-center justify-center gap-1">
         <Popover open={open} onOpenChange={handleOpenChange}>
+          <h1>
           <PopoverTrigger asChild>
-            <Button type="button" variant="ghost" className="text-lg font-semibold">
-              {formatFriendly(selectedDate)}
+            <Button type="button" variant="ghost" className="h-10 gap-1.5 px-3 text-xl font-extrabold">
+              {formatFriendly(selectedDate)}<ChevronDown className="size-4" strokeWidth={2.5} aria-hidden />
             </Button>
           </PopoverTrigger>
+          </h1>
           <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
@@ -61,20 +68,24 @@ export const DateNav = ({ selectedDate, onDateChange }) => {
             type="button"
             variant="outline"
             size="sm"
+            className="rounded-full"
             onClick={() => onDateChange(new Date())}
           >
             Today
           </Button>
         )}
       </div>
+      {subtitle}
+      </div>
       <Button
         type="button"
         variant="outline"
         size="icon"
+        shape="circular"
         aria-label="Next day"
         onClick={() => onDateChange(addDays(selectedDate, 1))}
       >
-        →
+        <ChevronRight aria-hidden />
       </Button>
     </div>
   );

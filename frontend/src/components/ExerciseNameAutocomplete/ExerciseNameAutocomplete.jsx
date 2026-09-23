@@ -85,7 +85,7 @@ export const ExerciseNameAutocomplete = ({
       {showList && (
         <div
           role="listbox"
-          className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md"
+          className="absolute z-50 mt-2 -ml-1.5 w-[calc(100%+0.75rem)] rounded-xl bg-popover p-1.5 text-popover-foreground shadow-[var(--popover-shadow)]"
           onMouseDown={(e) => e.preventDefault()}
         >
           {matches.map((s, i) => (
@@ -94,8 +94,8 @@ export const ExerciseNameAutocomplete = ({
               type="button"
               role="option"
               aria-selected={i === highlightedIndex}
-              className={`block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                i === highlightedIndex ? "bg-accent text-accent-foreground" : ""
+              className={`block w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-fill ${
+                i === highlightedIndex ? "bg-fill" : ""
               }`}
               onClick={() => selectSuggestion(s)}
             >

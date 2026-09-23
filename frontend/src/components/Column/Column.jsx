@@ -6,7 +6,7 @@ import { AnimatePresence } from "motion/react";
 import { Exercise } from "../../Exercise/Exercise";
 export const Column = ({ exercises, celebratingId, lastResults, onDelete, onEdit }) => {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col divide-y divide-separator overflow-hidden">
       <SortableContext
         items={exercises.map((e) => e.id)}
         strategy={verticalListSortingStrategy}

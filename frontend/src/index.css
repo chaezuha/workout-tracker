@@ -1,21 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
+    /* Adwaita Sans is Inter-derived: GNOME users get the real thing, everyone
+       else gets the bundled Inter. */
+    --font-sans: "Adwaita Sans", Cantarell, "Inter Variable", system-ui, sans-serif;
+    --color-sidebar-ring: var(--ring);
+    --color-sidebar-border: var(--border);
+    --color-sidebar-accent-foreground: var(--accent-foreground);
+    --color-sidebar-accent: var(--accent);
+    --color-sidebar-primary-foreground: var(--primary-foreground);
+    --color-sidebar-primary: var(--primary);
+    --color-sidebar-foreground: var(--foreground);
+    --color-sidebar: var(--card);
     --color-chart-5: var(--chart-5);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
@@ -24,7 +26,12 @@
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
+    --color-separator: var(--separator);
     --color-destructive: var(--destructive);
+    --color-destructive-bg: var(--destructive-bg);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-accent-text: var(--accent-text);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -35,105 +42,133 @@
     --color-primary: var(--primary);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
+    --color-dialog: var(--dialog);
+    --color-headerbar: var(--headerbar);
     --color-card-foreground: var(--card-foreground);
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    --color-fill: var(--fill);
+    --color-fill-hover: var(--fill-hover);
+    --color-fill-active: var(--fill-active);
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 6px;
+    --radius-xl: 12px;
+    --radius-2xl: 15px;
+    --radius-3xl: 18px;
+    --radius-4xl: 24px;
 }
 
+/* libadwaita 1.6 palette. */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --background: #fafafb;
+    --foreground: #323233;
+    --headerbar: #ffffff;
+    --card: #ffffff;
+    --card-foreground: #323233;
+    --popover: #ffffff;
+    --popover-foreground: #323233;
+    --dialog: #fafafb;
+    --primary: #3584e4;
+    --primary-foreground: #ffffff;
+    --secondary: #ebebed;
+    --secondary-foreground: #323233;
+    --muted: #ebebed;
+    --muted-foreground: #6e6e73;
+    --accent: #e1ecfb;
+    --accent-foreground: #0461be;
+    --accent-text: #0461be;
+    --destructive: #c30000;
+    --destructive-bg: #e01b24;
+    --success: #007c3d;
+    --warning: #905400;
+    --border: rgb(0 0 6 / 15%);
+    --separator: rgb(0 0 6 / 10%);
+    --input: rgb(0 0 6 / 15%);
+    --fill: rgb(0 0 6 / 8%);
+    --fill-hover: rgb(0 0 6 / 12%);
+    --fill-active: rgb(0 0 6 / 20%);
+    --ring: rgb(53 132 228 / 50%);
+    --card-shadow: 0 0 0 1px rgb(0 0 6 / 3%), 0 1px 3px 1px rgb(0 0 6 / 7%), 0 2px 6px 2px rgb(0 0 6 / 3%);
+    --popover-shadow: 0 0 0 1px rgb(0 0 6 / 8%), 0 2px 8px 2px rgb(0 0 6 / 12%);
+    --dialog-shadow: 0 0 0 1px rgb(0 0 6 / 5%), 0 4px 24px 4px rgb(0 0 6 / 18%);
+    --chart-1: #3584e4;
+    --chart-2: #2ec27e;
+    --chart-3: #e5a50a;
+    --chart-4: #9141ac;
+    --chart-5: #6e6e73;
+    --radius: 0.75rem;
+    --headerbar-height: 47px;
+    --mobile-nav-height: calc(4rem + env(safe-area-inset-bottom));
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --background: #222226;
+    --foreground: #ffffff;
+    --headerbar: #2e2e32;
+    --card: #333337;
+    --card-foreground: #ffffff;
+    --popover: #36363a;
+    --popover-foreground: #ffffff;
+    --dialog: #36363a;
+    --primary: #3584e4;
+    --primary-foreground: #ffffff;
+    --secondary: #3a3a3e;
+    --secondary-foreground: #ffffff;
+    --muted: #3a3a3e;
+    --muted-foreground: #a6a6ab;
+    --accent: #263a55;
+    --accent-foreground: #81d0ff;
+    --accent-text: #81d0ff;
+    --destructive: #ff938c;
+    --destructive-bg: #e01b24;
+    --success: #78e9ab;
+    --warning: #ffc252;
+    --border: rgb(255 255 255 / 15%);
+    --separator: rgb(255 255 255 / 8%);
+    --input: rgb(255 255 255 / 15%);
+    --fill: rgb(255 255 255 / 10%);
+    --fill-hover: rgb(255 255 255 / 15%);
+    --fill-active: rgb(255 255 255 / 25%);
+    --ring: rgb(53 132 228 / 60%);
+    --card-shadow: 0 0 0 1px rgb(0 0 6 / 36%), 0 1px 3px 1px rgb(0 0 6 / 12%), 0 2px 6px 2px rgb(0 0 6 / 8%);
+    --popover-shadow: 0 0 0 1px rgb(0 0 6 / 50%), 0 2px 8px 2px rgb(0 0 6 / 30%);
+    --dialog-shadow: 0 0 0 1px rgb(0 0 6 / 50%), 0 4px 24px 4px rgb(0 0 6 / 40%);
+    --chart-1: #62a0ea;
+    --chart-2: #57e389;
+    --chart-3: #f8e45c;
+    --chart-4: #c061cb;
+    --chart-5: #a6a6ab;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
-    }
-  body {
-    @apply bg-background text-foreground;
-    }
+    @apply border-border outline-ring;
+  }
   html {
     @apply font-sans;
-    }
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Inter's single-storey a and flat-top 1 read closer to Adwaita Sans. */
+    font-feature-settings: "cv05", "cv11";
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  :focus-visible {
+    outline-width: 2px;
+    outline-offset: 1px;
+  }
 }
 
 .day-checked-in {
   background-color: var(--primary);
   color: var(--primary-foreground);
   border-radius: 9999px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .day-has-workout::after {
@@ -145,5 +180,123 @@
   width: 4px;
   height: 4px;
   border-radius: 9999px;
-  background-color: var(--primary);
+  background-color: var(--accent-text);
+}
+
+@layer components {
+  /* AdwClamp: content never grows past a comfortable reading width. */
+  .page-content {
+    @apply mx-auto w-full max-w-[640px] space-y-8 px-3 py-6 sm:px-6 sm:py-10;
+  }
+
+  /* Type scale (Adwaita style classes). */
+  .title-1 { font-size: 1.75rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; }
+  .title-2 { font-size: 1.375rem; font-weight: 800; line-height: 1.25; letter-spacing: -0.005em; }
+  .title-3 { font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
+  .title-4 { font-size: 1.0625rem; font-weight: 700; line-height: 1.3; }
+  .heading { font-size: 0.9375rem; font-weight: 700; line-height: 1.35; }
+  .caption { font-size: 0.8125rem; line-height: 1.35; }
+  .dim { color: var(--muted-foreground); }
+  .numeric { font-variant-numeric: tabular-nums; }
+
+  /* Preferences group: bold heading above a boxed list. */
+  .pref-group { @apply grid gap-3; }
+  .group-header { @apply flex min-h-8 flex-wrap items-end justify-between gap-x-3 gap-y-2 px-0.5; }
+  .group-title { font-size: 0.9375rem; font-weight: 700; line-height: 1.35; }
+  .group-description { @apply mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground; }
+
+  .card {
+    background: var(--card);
+    color: var(--card-foreground);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--card-shadow);
+  }
+  /* No overflow clipping (it would cut off popups like the name
+     autocomplete); the end rows inherit the corners instead. */
+  .boxed-list {
+    background: var(--card);
+    color: var(--card-foreground);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--card-shadow);
+  }
+  .boxed-list > * + * { border-top: 1px solid var(--separator); }
+  .boxed-list > :first-child { border-top-left-radius: inherit; border-top-right-radius: inherit; }
+  .boxed-list > :last-child { border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
+
+  /* AdwActionRow. */
+  .row {
+    @apply flex min-h-[50px] items-center gap-3 px-3 py-2;
+  }
+  .row-activatable {
+    @apply w-full cursor-pointer text-left transition-colors outline-none;
+  }
+  .row-activatable:hover { background-color: color-mix(in srgb, var(--card), var(--foreground) 4%); }
+  .row-activatable:active { background-color: color-mix(in srgb, var(--card), var(--foreground) 8%); }
+  .row-activatable:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+  .row-body { @apply grid min-w-0 flex-1 gap-0.5; }
+  .row-title { @apply break-words; }
+  .row-subtitle { @apply text-[0.8125rem] leading-snug break-words text-muted-foreground; }
+  .row-suffix { @apply flex shrink-0 items-center gap-1.5; }
+
+  /* AdwStatusPage. */
+  .status-page {
+    @apply flex flex-col items-center gap-2 px-4 py-10 text-center sm:py-14;
+  }
+  .status-page-icon {
+    @apply mb-4 size-20 text-muted-foreground opacity-60;
+    stroke-width: 1.5;
+  }
+  .status-page p { @apply max-w-sm text-muted-foreground; }
+  .status-page > :is(button, a):last-child { @apply mt-6; }
+
+  .exercise-row {
+    @apply grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-1.5 py-2.5 pr-2 pl-1 sm:pr-3;
+    transition: background-color 200ms;
+  }
+  .exercise-row[data-feedback="logged"] { background: color-mix(in srgb, var(--card), #2ec27e 12%); }
+  .exercise-row[data-feedback="pr"] { background: color-mix(in srgb, var(--card), #e5a50a 16%); }
+  .set-row {
+    @apply grid grid-cols-2 items-end gap-3 rounded-xl bg-card p-3 shadow-[var(--card-shadow)] sm:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:gap-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none;
+  }
+  .set-field { @apply grid min-w-0 gap-1.5; }
+  .set-label { @apply text-xs font-semibold text-muted-foreground sm:sr-only; }
+
+  /* AdwBanner. */
+  .banner {
+    @apply border-b border-separator;
+    background: color-mix(in srgb, var(--headerbar), var(--primary) 14%);
+  }
+  .banner-inner {
+    @apply mx-auto flex max-w-[640px] flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-3 py-2 text-center text-sm sm:px-6;
+  }
+  .banner[data-tone="warning"] { background: color-mix(in srgb, var(--headerbar), #e5a50a 22%); }
+  .banner[data-tone="neutral"] { background: color-mix(in srgb, var(--background), var(--foreground) 4%); }
+}
+
+/* AdwEntryRow: the entry is borderless inside the row and the whole row
+   takes the focus ring. Unlayered so it wins over Input's utilities. */
+.entry-row:focus-within { outline: 2px solid var(--ring); outline-offset: -2px; }
+.entry-row [data-slot="input"] {
+  height: 1.75rem; min-height: 0; padding-inline: 0; background: transparent; outline: none;
+}
+.entry-row[data-inline] [data-slot="input"] {
+  width: 5.5rem; height: 2.125rem; padding-inline: 0.625rem; background: var(--fill);
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.entry-row[data-inline]:focus-within { outline: none; }
+.entry-row[data-inline] [data-slot="input"]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+
+/* Linked buttons (unlayered so it wins over the radius utilities). */
+.linked { display: inline-flex; }
+.linked > *:not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.linked > *:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 1px; }
+
+@media (max-width: 639px), (pointer: coarse) {
+  [data-size][data-variant]:not([data-size="xs"]), [data-slot="select-trigger"], [data-slot="input"],
+  [data-slot="menu-item"], [data-slot="select-item"] { min-height: 44px; }
+  [data-variant][data-size^="icon"]:not([data-day]) { min-width: 44px; }
+}
+@media (min-width: 640px) { :root { --mobile-nav-height: 0px; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

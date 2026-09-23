@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChartNoAxesCombined, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { HeaderActions } from "@/components/HeaderBar/HeaderSlot";
 import {
   RANGE_OPTIONS,
   aggregateSessionTotals,
@@ -20,11 +22,17 @@ import { ExerciseHistoryDialog } from "@/components/ExerciseHistoryDialog/Exerci
 import { HistoryCsvControls } from "@/components/HistoryCsv/HistoryCsvControls";
 
 const SummaryCard = ({ value, label }) => (
-  <div className="rounded-xl border bg-muted/50 p-4">
-    <div className="space-y-1">
-      <p className="text-lg leading-none font-semibold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
+  <div className="min-w-0 bg-card px-4 py-3.5 first:col-span-2 sm:first:col-span-1 sm:last:col-span-2">
+    <p className="title-3 numeric break-words">{value}</p>
+    <p className="caption dim">{label}</p>
+  </div>
+);
+
+const StatusPage = ({ title, children }) => (
+  <div className="status-page">
+    <ChartNoAxesCombined className="status-page-icon" aria-hidden />
+    <h2 className="title-1">{title}</h2>
+    <p>{children}</p>
   </div>
 );
 
@@ -76,91 +84,74 @@ export const StatsPage = () => {
 
   const showStats = () => {
     if (loading) {
-      return <p className="text-sm text-muted-foreground">Loading your stats…</p>;
+      return <p className="py-10 text-center text-sm text-muted-foreground">Loading your stats…</p>;
     }
     if (error) {
-      return <p className="text-sm text-destructive">{error}</p>;
+      return <StatusPage title="Couldn't Load Stats">{error}</StatusPage>;
     }
     if (!rows || rows.length === 0) {
       return (
-        <p className="text-sm text-muted-foreground">
-          No workouts logged yet — add some exercises to see your stats.
-        </p>
+        <StatusPage title="No Stats Yet">
+          Log a workout and your totals and best lifts will show up here.
+        </StatusPage>
       );
     }
     if (stats.exercises.length === 0) {
       return (
-        <p className="text-sm text-muted-foreground">
-          No completed workouts in this range — log your reps to see stats.
-        </p>
+        <StatusPage title="Nothing in This Range">
+          No logged sets in this time range. Try a longer one.
+        </StatusPage>
       );
     }
     return (
-      <>
-        <div className="grid grid-cols-3 gap-3">
-          <SummaryCard
-            value={`${stats.totals.totalVolume.toLocaleString()} lb`}
-            label="Total volume"
-          />
-          <SummaryCard value={stats.totals.exercises} label="Exercises" />
-          <SummaryCard value={stats.totals.sessions} label="Training days" />
-          <SummaryCard value={sessionTotals?.count ?? 0} label="Sessions" />
-          <SummaryCard
-            value={formatDurationCompact(sessionTotals?.totalSeconds ?? 0)}
-            label="Total time"
-          />
+      <section className="pref-group" aria-labelledby="lifts-title">
+        <div className="group-header">
+          <h2 id="lifts-title" className="group-title">Lifts</h2>
         </div>
-        <div className="space-y-3">
+        <div className="boxed-list">
           {stats.exercises.map((exercise) => (
             <button
               type="button"
               key={exercise.key}
               onClick={() => setSelectedExercise(exercise)}
-              className="flex w-full items-center justify-between rounded-xl border bg-muted/50 p-4 text-left transition-colors outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="row row-activatable flex-wrap gap-y-2"
             >
-              <div className="space-y-1">
-                <p className="font-medium">{exercise.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {exercise.days} {exercise.days === 1 ? "day" : "days"} trained
-                </p>
-              </div>
-              <div className="flex gap-6 text-right">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold tabular-nums">
-                    {exercise.bestWeight} lb
-                  </p>
-                  <p className="text-xs text-muted-foreground">Best weight</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold tabular-nums">
-                    {Math.round(exercise.bestOneRepMax)} lb
-                  </p>
-                  <p className="text-xs text-muted-foreground">Est. 1RM</p>
-                </div>
-              </div>
+              <span className="row-body min-w-32">
+                <span className="row-title">{exercise.name}</span>
+                <span className="row-subtitle">
+                  {exercise.days} {exercise.days === 1 ? "day" : "days"}
+                </span>
+              </span>
+              <span className="row-suffix gap-5 text-right">
+                <span className="grid">
+                  <span className="font-bold numeric">{exercise.bestWeight} lb</span>
+                  <span className="caption dim">Best</span>
+                </span>
+                <span className="grid">
+                  <span className="font-bold numeric">{Math.round(exercise.bestOneRepMax)} lb</span>
+                  <span className="caption dim">Est. 1RM</span>
+                </span>
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+              </span>
             </button>
           ))}
         </div>
-      </>
+      </section>
     );
   };
 
   const showRangeSelect = !loading && !error && rows && rows.length > 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-6 py-8">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Stats</h1>
-          <p className="text-sm text-muted-foreground">
-            Your training totals and best lifts.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <HistoryCsvControls
-            onImported={() => setReloadKey((k) => k + 1)}
-          />
-          {showRangeSelect && (
+    <div className="page-content">
+      <h1 className="sr-only">Stats</h1>
+      <HeaderActions>
+        <HistoryCsvControls onImported={() => setReloadKey((k) => k + 1)} />
+      </HeaderActions>
+      {showRangeSelect && (
+        <section className="pref-group" aria-labelledby="overview-title">
+          <div className="group-header items-center">
+            <h2 id="overview-title" className="group-title">Overview</h2>
             <Select value={range} onValueChange={setRange}>
               <SelectTrigger aria-label="Time range">
                 <SelectValue />
@@ -173,9 +164,24 @@ export const StatsPage = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          {stats.exercises.length > 0 && (
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-separator shadow-[var(--card-shadow)] sm:grid-cols-3">
+            <SummaryCard
+              value={`${stats.totals.totalVolume.toLocaleString()} lb`}
+              label="Total volume"
+            />
+            <SummaryCard value={stats.totals.exercises} label="Exercises" />
+            <SummaryCard value={stats.totals.sessions} label="Training days" />
+            <SummaryCard value={sessionTotals?.count ?? 0} label="Sessions" />
+            <SummaryCard
+              value={formatDurationCompact(sessionTotals?.totalSeconds ?? 0)}
+              label="Total time"
+            />
+          </div>
           )}
-        </div>
-      </div>
+        </section>
+      )}
       {showStats()}
       <ExerciseHistoryDialog
         exercise={selectedExercise}

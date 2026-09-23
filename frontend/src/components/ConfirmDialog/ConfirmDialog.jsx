@@ -18,8 +18,13 @@ export const ConfirmDialog = ({
   confirmLabel = "Confirm",
   confirmVariant = "default",
   onConfirm,
+  open: controlledOpen,
+  onOpenChange,
+  restoreFocusRef,
 }) => {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
 
   const handleConfirm = () => {
     setOpen(false);
@@ -28,17 +33,20 @@ export const ConfirmDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent variant="alert" showCloseButton={false} onCloseAutoFocus={restoreFocusRef ? (event) => {
+        event.preventDefault();
+        restoreFocusRef.current?.focus();
+      } : undefined}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" size="lg" className="rounded-full">Cancel</Button>
           </DialogClose>
-          <Button variant={confirmVariant} onClick={handleConfirm}>
+          <Button variant={confirmVariant} size="lg" className="rounded-full" onClick={handleConfirm}>
             {confirmLabel}
           </Button>
         </DialogFooter>

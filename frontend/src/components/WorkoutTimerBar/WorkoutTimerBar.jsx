@@ -24,10 +24,10 @@ export const WorkoutTimerBar = () => {
       : null;
 
   return (
-    <div className="border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-x-3 gap-y-1 px-6 py-2">
-        <div className="flex min-w-0 items-center gap-2 text-sm">
-          <Timer className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    <div className="banner">
+      <div className="banner-inner justify-between sm:justify-center">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-0.5">
+          <Timer className="size-4 shrink-0" aria-hidden />
           {location.pathname === "/" ? (
             <span className="truncate font-medium">{name}</span>
           ) : (
@@ -35,11 +35,11 @@ export const WorkoutTimerBar = () => {
               {name}
             </Link>
           )}
-          <span className="font-semibold tabular-nums">
+          <span className="font-bold tabular-nums">
             {formatDuration(timer.elapsed)}
           </span>
           {timer.status === "paused" && (
-            <span className="text-muted-foreground">paused</span>
+            <span className="text-muted-foreground">Paused</span>
           )}
           {startedLabel && (
             <span className="whitespace-nowrap text-xs text-muted-foreground">
@@ -49,11 +49,11 @@ export const WorkoutTimerBar = () => {
         </div>
         <div className="flex items-center gap-1">
           {timer.status === "running" ? (
-            <Button type="button" size="sm" variant="ghost" onClick={timer.pause}>
+            <Button type="button" size="sm" variant="outline" onClick={timer.pause}>
               Pause
             </Button>
           ) : (
-            <Button type="button" size="sm" variant="ghost" onClick={timer.resume}>
+            <Button type="button" size="sm" onClick={timer.resume}>
               Resume
             </Button>
           )}
@@ -63,9 +63,9 @@ export const WorkoutTimerBar = () => {
                 Stop
               </Button>
             }
-            title="Stop timer?"
+            title="Stop Timer?"
             description={`This adds ${formatDuration(timer.elapsed)} to ${name}.`}
-            confirmLabel="Stop & save"
+            confirmLabel="Stop and Save"
             onConfirm={timer.stop}
           />
           <ConfirmDialog
@@ -74,12 +74,12 @@ export const WorkoutTimerBar = () => {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="text-muted-foreground hover:text-destructive"
+                className="hover:text-destructive"
               >
                 Discard
               </Button>
             }
-            title="Discard timer?"
+            title="Discard Timer?"
             description="The elapsed time is thrown away and not added to any session."
             confirmLabel="Discard"
             confirmVariant="destructive"
@@ -88,7 +88,7 @@ export const WorkoutTimerBar = () => {
         </div>
       </div>
       {timer.saveError && (
-        <p className="mx-auto max-w-2xl px-6 pb-2 text-sm text-destructive">
+        <p className="mx-auto max-w-[640px] px-3 pb-2 text-center text-sm text-destructive sm:px-6">
           {timer.saveError}
         </p>
       )}

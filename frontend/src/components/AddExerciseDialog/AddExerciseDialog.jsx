@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExerciseNameAutocomplete } from "@/components/ExerciseNameAutocomplete/ExerciseNameAutocomplete";
 import { getExerciseSuggestions } from "@/services/exercises";
@@ -6,17 +7,17 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
+import { EntryRow } from "@/components/ui/entry-row";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
-export const AddExerciseDialog = ({ onAdd }) => {
+// trigger="row" is the last row of a session's boxed list; "pill" is the
+// empty-day status page button.
+export const AddExerciseDialog = ({ onAdd, trigger = "row" }) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState("");
@@ -53,24 +54,23 @@ export const AddExerciseDialog = ({ onAdd }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button
-          type="button"
-          className="w-full rounded-xl border border-dashed border-muted-foreground/40 p-3 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
-        >
-          + Add exercise
-        </button>
+        {trigger === "pill" ? (
+          <Button type="button" size="pill">
+            <Plus aria-hidden /> Add Exercise
+          </Button>
+        ) : (
+          <button type="button" className="row row-activatable justify-center gap-2 font-bold text-accent-text">
+            <Plus className="size-4" aria-hidden /> Add Exercise
+          </button>
+        )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
-        <form onSubmit={handleSubmit}>
+      <DialogContent>
+        <form onSubmit={handleSubmit} className="grid gap-5">
           <DialogHeader>
-            <DialogTitle>Add exercise</DialogTitle>
-            <DialogDescription>
-              Add an exercise to this day's workout
-            </DialogDescription>
+            <DialogTitle>Add Exercise</DialogTitle>
           </DialogHeader>
-          <FieldGroup>
-            <Field>
-              <Label htmlFor="add-name">Name</Label>
+          <div className="boxed-list">
+            <EntryRow label="Name" htmlFor="add-name">
               <ExerciseNameAutocomplete
                 id="add-name"
                 value={name}
@@ -79,9 +79,8 @@ export const AddExerciseDialog = ({ onAdd }) => {
                 onSelect={handleSelectSuggestion}
                 required
               />
-            </Field>
-            <Field>
-              <Label htmlFor="add-weight">Weight</Label>
+            </EntryRow>
+            <EntryRow inline label="Weight" htmlFor="add-weight" unit="lb">
               <Input
                 id="add-weight"
                 type="number"
@@ -91,9 +90,8 @@ export const AddExerciseDialog = ({ onAdd }) => {
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
               />
-            </Field>
-            <Field>
-              <Label htmlFor="add-sets">Sets</Label>
+            </EntryRow>
+            <EntryRow inline label="Sets" htmlFor="add-sets">
               <Input
                 id="add-sets"
                 type="number"
@@ -103,9 +101,8 @@ export const AddExerciseDialog = ({ onAdd }) => {
                 onChange={(e) => setSets(e.target.value)}
                 required
               />
-            </Field>
-            <Field>
-              <Label htmlFor="add-reps">Reps</Label>
+            </EntryRow>
+            <EntryRow inline label="Reps" htmlFor="add-reps">
               <Input
                 id="add-reps"
                 type="number"
@@ -115,16 +112,17 @@ export const AddExerciseDialog = ({ onAdd }) => {
                 onChange={(e) => setReps(e.target.value)}
                 required
               />
-            </Field>
-            <Field>
-              <Label htmlFor="add-notes">Notes</Label>
+            </EntryRow>
+          </div>
+          <div className="boxed-list">
+            <EntryRow label="Notes (optional)" htmlFor="add-notes">
               <Input
                 id="add-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
-            </Field>
-          </FieldGroup>
+            </EntryRow>
+          </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>

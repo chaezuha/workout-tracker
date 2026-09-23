@@ -12,7 +12,7 @@ export const SaveStatus = ({ saving, pending, online, isGuest }) => {
     label = "Saving…";
   } else if (!isGuest && pending > 0 && !online) {
     icon = <CloudOff className="size-3" aria-hidden />;
-    label = "Offline — will sync";
+    label = "Offline, will sync later";
   } else if (!isGuest && pending > 0) {
     icon = <Loader2 className="size-3 animate-spin" aria-hidden />;
     label = "Syncing to account…";

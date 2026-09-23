@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { EntryRow } from "@/components/ui/entry-row";
 
 export function AuthForm() {
   const { signIn, signUp } = useAuth();
@@ -47,54 +47,61 @@ export function AuthForm() {
   };
 
   return (
-    <div className="mx-auto max-w-sm p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">
-        {isSignup ? "Create an account" : "Sign in"}
-      </h1>
+    <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-4 pt-[calc(2rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))]">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <img src="/pwa-192x192.png" alt="" className="size-20 rounded-[22%] shadow-[var(--card-shadow)]" />
+        <h1 className="title-1">
+          {isSignup ? "Create Account" : "Sign In"}
+        </h1>
+        <p className="text-muted-foreground">
+          {isSignup
+            ? "Sync your workouts across devices."
+            : "Welcome back to Workout Tracker."}
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+      <form onSubmit={handleSubmit} className="grid gap-5">
+        <div className="boxed-list">
+          <EntryRow label="Email" htmlFor="email">
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </EntryRow>
+          <EntryRow label="Password" htmlFor="password">
+            <Input
+              id="password"
+              type="password"
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </EntryRow>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete={isSignup ? "new-password" : "current-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {message && <p className="text-sm text-muted-foreground">{message}</p>}
+        {error && <p className="text-center text-sm text-destructive">{error}</p>}
+        {message && <p className="text-center text-sm text-muted-foreground">{message}</p>}
 
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "…" : isSignup ? "Sign up" : "Sign in"}
+        <Button type="submit" size="pill" disabled={submitting} className="mx-auto min-w-48">
+          {submitting ? <Loader2 className="animate-spin" aria-label="Working" /> : isSignup ? "Sign Up" : "Sign In"}
         </Button>
       </form>
 
-      <Button type="button" variant="link" className="w-full" onClick={toggleMode}>
-        {isSignup
-          ? "Already have an account? Sign in"
-          : "Need an account? Sign up"}
-      </Button>
-
-      <Separator />
-
-      <Button asChild variant="ghost" className="w-full">
-        <Link to="/">← Back to guest session</Link>
-      </Button>
+      <div className="grid justify-items-center gap-1 text-sm">
+        <Button type="button" variant="ghost" className="text-accent-text" onClick={toggleMode}>
+          {isSignup
+            ? "Already have an account? Sign In"
+            : "New here? Create an Account"}
+        </Button>
+        <Button asChild variant="ghost">
+          <Link to="/">Continue as Guest</Link>
+        </Button>
+      </div>
     </div>
   );
 }

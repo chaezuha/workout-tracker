@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { OverflowMenu } from "@/components/ui/overflow-menu";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ const withTimeout = (promise, ms) =>
     ),
   ]);
 
-export const ShareSessionButton = ({ session, dateKey }) => {
+export const ShareSessionButton = ({ session, dateKey, menu }) => {
   const cardRef = useRef(null);
   // Non-null summary mounts the off-screen card for capture.
   const [summary, setSummary] = useState(null);
@@ -97,7 +98,11 @@ export const ShareSessionButton = ({ session, dateKey }) => {
 
   return (
     <>
-      <Button
+      {menu ? <OverflowMenu label={menu.label} triggerRef={menu.triggerRef} actions={[
+        ...menu.before,
+        menu.canShare && { label: busy ? "Creating image…" : "Share Summary", icon: Share2, onSelect: share, disabled: busy },
+        ...menu.after,
+      ]} /> : <Button
         type="button"
         size="sm"
         variant="ghost"
@@ -107,7 +112,7 @@ export const ShareSessionButton = ({ session, dateKey }) => {
         aria-label="Share session summary"
       >
         <Share2 />
-      </Button>
+      </Button>}
       {summary && (
         <div className="fixed left-[-9999px] top-0" aria-hidden="true">
           <ShareSummaryCard ref={cardRef} summary={summary} />

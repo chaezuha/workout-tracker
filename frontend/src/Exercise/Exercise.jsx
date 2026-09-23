@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
-import { Check, CopyPlus, Plus, X } from "lucide-react";
+import { Check, CopyPlus, Plus, X, GripVertical, Pencil, Trash2 } from "lucide-react";
+import { OverflowMenu } from "@/components/ui/overflow-menu";
 import { loggedReps } from "@/services/stats";
 import {
   sanitizeEntry,
@@ -33,9 +34,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
+import { EntryRow } from "@/components/ui/entry-row";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -43,17 +43,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Keyframes end on the card's resting shadow (shadow-xs) so the pulse
-// doesn't leave a stale inline box-shadow behind.
-const BASE_SHADOW = "0 1px 2px 0 rgba(0, 0, 0, 0.05)";
-const pulse = (rgb, spread) => ({
-  boxShadow: [
-    `${BASE_SHADOW}, 0 0 0 0px rgba(${rgb}, 0)`,
-    `${BASE_SHADOW}, 0 0 0 ${spread}px rgba(${rgb}, 0.45)`,
-    `${BASE_SHADOW}, 0 0 0 0px rgba(${rgb}, 0)`,
-  ],
-});
 
 const TYPE_LABELS = { warmup: "Warm-up", working: "Working", drop: "Drop" };
 
@@ -76,6 +65,7 @@ const rowToEntry = (row, scale) =>
   });
 
 export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, setEntries, lastResult, celebrating, onDelete, onEdit }) => {
+  const menuRef = useRef(null);
   const [rows, setRows] = useState([]);
   const [scale, setScale] = useState(() => getEffortScale());
   const [logOpen, setLogOpen] = useState(false);
@@ -234,22 +224,13 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
         transition={{ duration: 0.2, ease: "easeOut" }}
         className="overflow-hidden"
       >
-        <motion.div
-          animate={
-            celebrating
-              ? { scale: [1, 1.03, 1], ...pulse("245, 158, 11", 6) }
-              : justLogged
-                ? pulse("16, 185, 129", 4)
-                : {}
-          }
-          transition={{ duration: celebrating ? 1.1 : 0.7, ease: "easeInOut" }}
-          className={`flex w-full flex-wrap items-center gap-3 rounded-xl border bg-card p-4 shadow-xs transition-shadow ${
-            isDragging ? "opacity-90 shadow-lg ring-2 ring-ring/40" : ""
-          }`}
+        <div
+          data-feedback={celebrating ? "pr" : justLogged ? "logged" : undefined}
+          className={`exercise-row ${isDragging ? "relative bg-card shadow-[var(--popover-shadow)]" : ""}`}
         >
       {/* touch-none lives on the handle (not the row) so the browser can't
-          claim the gesture as a scroll mid-drag; py-2 -my-2 grows the hit box
-          without changing the row height. attributes + listeners + the
+          claim the gesture as a scroll mid-drag. The handle has a 44px hit
+          target. attributes + listeners + the
           activator ref all sit on this one focusable button so keyboard
           reordering (tab to handle, space/enter, arrows) works. */}
       <button
@@ -258,20 +239,19 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
-        className="touch-none text-2xl px-2 py-2 -my-2 cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+        className="flex min-h-11 w-9 touch-none items-center justify-center cursor-grab active:cursor-grabbing select-none text-muted-foreground hover:text-foreground rounded-md focus-visible:outline-2 focus-visible:outline-ring"
       >
-        ⠿
+        <GripVertical className="size-4" aria-hidden />
       </button>
-      <div className="min-w-0 space-y-1">
-        <div className="font-medium">{name}</div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="row-body">
+        <div className="row-title">{name}</div>
+        <div className="row-subtitle flex flex-wrap items-center gap-x-2">
           <span>{summarizeEntries(entries)}</span>
           {loggedCount > 0 && (
             <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 500, damping: 22 }}
-              className="inline-flex items-center gap-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="inline-flex items-center gap-0.5 font-bold text-success numeric"
             >
               <Check className="size-3.5" aria-hidden />
               {loggedCount}/{sets}
@@ -279,37 +259,40 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
           )}
         </div>
         {notes && (
-          <div className="truncate text-sm text-muted-foreground">{notes}</div>
+          <div className="row-subtitle truncate italic">{notes}</div>
         )}
         {lastResult && (
           <div className="text-xs text-muted-foreground">
-            Last ({formatFriendly(fromDateKey(lastResult.date))}):{" "}
+            Last time ({formatFriendly(fromDateKey(lastResult.date))}):{" "}
             {formatLastEntries(lastResult.entries)}
             {/* the hint collapses once today's logging starts */}
             {loggedCount === 0 && suggestion && (
-              <span className="text-foreground/70">
+              <span className="text-accent-text">
                 {" "}· {formatSuggestion(suggestion)}
               </span>
             )}
           </div>
         )}
       </div>
-      <div className="ml-auto flex gap-2">
+      <div className="flex items-center justify-end gap-0.5 sm:gap-1">
       <Dialog open={logOpen} onOpenChange={openLog}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm">Log sets</Button>
+          <Button variant="outline" size="sm">Log Sets</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <form className="grid gap-4" onSubmit={submitLog}>
             <DialogHeader>
-              <DialogTitle>Log sets</DialogTitle>
+              <DialogTitle>{name}</DialogTitle>
               <DialogDescription>
-                Weight and reps for each set; type and{" "}
+                Log weight and reps for each set. Type and{" "}
                 {scale === "rpe" ? "RPE" : "RIR"} are optional.
               </DialogDescription>
             </DialogHeader>
-            <div className="max-h-[55vh] space-y-1.5 overflow-y-auto pr-1">
-              <div className="grid grid-cols-[minmax(5rem,1fr)_minmax(4rem,1fr)_minmax(3.5rem,1fr)_3.25rem_3.5rem] items-center gap-1.5 text-xs text-muted-foreground">
+            <Button type="button" variant="ghost" size="sm" className="justify-self-start sm:hidden" onClick={toggleScale}>
+              Effort: {scale === "rpe" ? "RPE" : "RIR"} · switch to {scale === "rpe" ? "RIR" : "RPE"}
+            </Button>
+            <div className="-mx-1.5 max-h-[55dvh] space-y-3 overflow-y-auto px-1.5 py-1.5 sm:space-y-2">
+              <div className="hidden sm:grid sm:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 text-xs text-muted-foreground">
                 <span>Type</span>
                 <span>Weight</span>
                 <span>Reps</span>
@@ -317,17 +300,19 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   type="button"
                   onClick={toggleScale}
                   title="Switch between RPE and RIR"
-                  className="rounded text-left underline decoration-dotted underline-offset-2 hover:text-foreground"
+                  className="rounded text-left underline decoration-dotted underline-offset-2 hover:text-foreground pointer-coarse:min-h-11"
                 >
                   {scale === "rpe" ? "RPE" : "RIR"}
                 </button>
-                <span />
+                <span className="w-14 pointer-coarse:w-[5.5rem]" />
               </div>
               {rows.map((row, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-[minmax(5rem,1fr)_minmax(4rem,1fr)_minmax(3.5rem,1fr)_3.25rem_3.5rem] items-center gap-1.5"
+                  className="set-row"
                 >
+                  <div className="set-field">
+                  <span className="set-label">Set {i + 1} · Type</span>
                   <Select
                     value={row.type}
                     onValueChange={(type) => patchRow(i, { type })}
@@ -344,6 +329,8 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                       <SelectItem value="drop">Drop set</SelectItem>
                     </SelectContent>
                   </Select>
+                  </div>
+                  <label className="set-field"><span className="set-label">Weight (lb)</span>
                   <Input
                     type="number"
                     inputMode="decimal"
@@ -354,6 +341,8 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                     value={row.weight}
                     onChange={(e) => patchRow(i, { weight: e.target.value })}
                   />
+                  </label>
+                  <label className="set-field"><span className="set-label">Reps</span>
                   <Input
                     type="number"
                     inputMode="numeric"
@@ -363,6 +352,9 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                     value={row.reps}
                     onChange={(e) => patchRow(i, { reps: e.target.value })}
                   />
+                  </label>
+                  <div className="set-field">
+                  <span className="set-label">{scale === "rpe" ? "RPE" : "RIR"} (optional)</span>
                   <Input
                     type="number"
                     inputMode="decimal"
@@ -371,11 +363,13 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                     value={row.rpeDisplay}
                     onChange={(e) => patchRow(i, { rpeDisplay: e.target.value })}
                   />
-                  <div className="flex items-center">
+                  </div>
+                  <div className="col-span-2 flex items-center justify-end sm:col-span-1">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
+                      shape="circular"
                       title="Copy set above"
                       disabled={i === 0}
                       onClick={() => copyRowAbove(i)}
@@ -387,6 +381,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                       type="button"
                       variant="ghost"
                       size="icon-sm"
+                      shape="circular"
                       title="Remove set"
                       onClick={() => removeRow(i)}
                     >
@@ -399,7 +394,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={addRow}>
-                <Plus aria-hidden /> Add set
+                <Plus aria-hidden /> Add Set
               </Button>
               <Button
                 type="button"
@@ -407,7 +402,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                 size="sm"
                 onClick={completeAllPlanned}
               >
-                Complete all planned
+                Fill In Planned Reps
               </Button>
               {lastResult && (
                 <Button
@@ -421,7 +416,7 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   }
                   onClick={applyPrefill}
                 >
-                  {suggestion ? "Prefill suggestion" : "Prefill from last time"}
+                  {suggestion ? "Use Suggestion" : "Copy Last Time"}
                 </Button>
               )}
             </div>
@@ -429,31 +424,25 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Save sets</Button>
+              <Button type="submit">Save</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">Edit</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-sm">
-          <form className="grid gap-4" onSubmit={submitEdit}>
+          <DialogContent className="sm:max-w-sm" onCloseAutoFocus={(event) => { event.preventDefault(); menuRef.current?.focus(); }}>
+          <form className="grid gap-5" onSubmit={submitEdit}>
             <DialogHeader>
-              <DialogTitle>Edit exercise</DialogTitle>
+              <DialogTitle>Edit Exercise</DialogTitle>
               <DialogDescription>
-                Weight, sets, and reps set the plan; sets you've already
-                logged keep their own values.
+                Changes the plan. Sets you've already logged keep their values.
               </DialogDescription>
             </DialogHeader>
-            <FieldGroup>
-              <Field>
-                <Label htmlFor="name-1">Name</Label>
+            <div className="boxed-list">
+              <EntryRow label="Name" htmlFor="name-1">
                 <Input id="name-1" name="name" defaultValue={name} required />
-              </Field>
-              <Field>
-                <Label htmlFor="weight-1">Weight</Label>
+              </EntryRow>
+              <EntryRow inline label="Weight" unit="lb" htmlFor="weight-1">
                 <Input
                   id="weight-1"
                   name="weight"
@@ -463,9 +452,8 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   step="0.5"
                   defaultValue={weight ?? ""}
                 />
-              </Field>
-              <Field>
-                <Label htmlFor="set-1">Sets</Label>
+              </EntryRow>
+              <EntryRow inline label="Sets" htmlFor="set-1">
                 <Input
                   id="set-1"
                   name="sets"
@@ -475,9 +463,8 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   defaultValue={sets}
                   required
                 />
-              </Field>
-              <Field>
-                <Label htmlFor="rep-1">Reps</Label>
+              </EntryRow>
+              <EntryRow inline label="Reps" htmlFor="rep-1">
                 <Input
                   id="rep-1"
                   name="reps"
@@ -487,32 +474,29 @@ export const Exercise = ({ id, name, weight, sets, reps, notes, completedReps, s
                   defaultValue={reps}
                   required
                 />
-              </Field>
-              <Field>
-                <Label htmlFor="notes-1">Notes</Label>
+              </EntryRow>
+            </div>
+            <div className="boxed-list">
+              <EntryRow label="Notes (optional)" htmlFor="notes-1">
                 <Input id="notes-1" name="notes" defaultValue={notes} />
-              </Field>
-            </FieldGroup>
+              </EntryRow>
+            </div>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Save changes</Button>
+              <Button type="submit">Save</Button>
             </DialogFooter>
           </form>
           </DialogContent>
       </Dialog>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-destructive hover:text-destructive"
-        onClick={() => onDelete(id)}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        Delete
-      </Button>
+      <OverflowMenu label={`Actions for ${name}`} triggerRef={menuRef} actions={[
+        { label: "Edit Exercise", icon: Pencil, onSelect: () => setEditOpen(true) },
+        "separator",
+        { label: "Delete Exercise", icon: Trash2, destructive: true, onSelect: () => onDelete(id) },
+      ]} />
       </div>
-        </motion.div>
+        </div>
       </motion.div>
     </div>
   );

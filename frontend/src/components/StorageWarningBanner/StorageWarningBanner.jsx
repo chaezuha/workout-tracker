@@ -18,18 +18,18 @@ export const StorageWarningBanner = () => {
   if (!visible) return null;
 
   return (
-    <div className="border-b bg-red-50 text-red-900 dark:bg-red-950/30 dark:text-red-200">
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-6 py-2 text-sm">
-        <p>
-          Couldn't save your latest change — browser storage may be full or
-          unavailable. Recent edits might be lost if you close this tab.
+    <div className="banner" data-tone="warning" role="alert">
+      <div className="banner-inner">
+        <p className="min-w-0 flex-1 sm:flex-none">
+          Your latest change couldn't be saved. Browser storage may be full,
+          so recent edits could be lost if you close this tab.
         </p>
         <Button
           type="button"
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
+          shape="circular"
           aria-label="Dismiss"
-          className="shrink-0 text-red-900 hover:bg-red-100 dark:text-red-200 dark:hover:bg-red-900/40"
           onClick={() => setVisible(false)}
         >
           <X />

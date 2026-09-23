@@ -68,10 +68,10 @@ export const GuestMigrationPrompt = () => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent variant="alert" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
-            {status === "done" ? "Import complete" : "Import your guest workouts?"}
+            {status === "done" ? "Import Complete" : "Import Guest Workouts?"}
           </DialogTitle>
           <DialogDescription>
             {status === "done"
@@ -82,13 +82,13 @@ export const GuestMigrationPrompt = () => {
                 }, and ${counts.templates} template${
                   counts.templates === 1 ? "" : "s"
                 }.`
-              : "You have workouts saved on this device from guest mode. Import them into your account? Your existing account data is kept."}
+              : "This device has workouts from guest mode. Import them into your account? Nothing already in your account is changed."}
           </DialogDescription>
         </DialogHeader>
         {status === "error" && (
           <p className="text-destructive text-sm">
             Import failed: {error?.message ?? "something went wrong."} Your
-            guest data is untouched — you can retry.
+            guest data is untouched, so you can try again.
           </p>
         )}
         <DialogFooter>
@@ -97,9 +97,9 @@ export const GuestMigrationPrompt = () => {
           ) : status === "error" ? (
             <>
               <Button variant="outline" onClick={() => setOpen(false)}>
-                Not now
+                Not Now
               </Button>
-              <Button onClick={handleImport}>Retry</Button>
+              <Button onClick={handleImport}>Try Again</Button>
             </>
           ) : (
             <>
@@ -108,12 +108,12 @@ export const GuestMigrationPrompt = () => {
                 disabled={migrating}
                 onClick={handleDecline}
               >
-                No thanks
+                No Thanks
               </Button>
               <Button disabled={migrating} onClick={handleImport}>
                 {migrating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="animate-spin" aria-hidden />
                     Importing…
                   </>
                 ) : (

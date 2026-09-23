@@ -1,3 +1,6 @@
+import { Timer } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,56 +12,59 @@ const REST_PRESETS = [60, 90, 120];
 export const RestTimer = () => {
   const rest = useRestTimer();
   const [customRest, setCustomRest] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
 
   const startCustomRest = () => {
     const seconds = Number(customRest);
     if (seconds > 0) {
       rest.start(seconds);
       setCustomRest("");
+      setCustomOpen(false);
     }
   };
 
   return (
-    <div className="rounded-xl border p-4 shadow-xs">
+    <div className="boxed-list">
       {rest.isRunning ? (
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <div className="text-sm text-muted-foreground">Rest</div>
-            <div className="text-2xl font-semibold tabular-nums">
-              {formatDuration(rest.remaining)}
-            </div>
+        <div className="row min-h-16" role="timer" aria-live="off">
+          <Timer className="size-5 text-accent-text" aria-hidden />
+          <div className="row-body">
+            <span className="row-subtitle">Resting</span>
+            <span className="title-2 numeric">{formatDuration(rest.remaining)}</span>
           </div>
           <Button type="button" variant="outline" onClick={rest.cancel}>
             Cancel
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="text-sm text-muted-foreground">Rest timer</div>
-          <div className="flex flex-wrap items-center gap-2">
-            {REST_PRESETS.map((seconds) => (
-              <Button
-                key={seconds}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => rest.start(seconds)}
-              >
-                {seconds}s
-              </Button>
-            ))}
-            <Input
-              type="number"
-              inputMode="numeric"
-              min="1"
-              placeholder="Custom (s)"
-              className="w-32"
-              value={customRest}
-              onChange={(e) => setCustomRest(e.target.value)}
-            />
-            <Button type="button" onClick={startCustomRest}>
-              Start
-            </Button>
+        <div className="row flex-wrap gap-y-2">
+          <Timer className="size-4" aria-hidden />
+          <span className="row-body min-w-24">Rest Timer</span>
+          <div className="row-suffix ml-auto">
+            <div className="linked" role="group" aria-label="Start rest">
+              {REST_PRESETS.map((seconds) => (
+                <Button
+                  key={seconds}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="numeric"
+                  onClick={() => rest.start(seconds)}
+                >
+                  {seconds}s
+                </Button>
+              ))}
+            </div>
+            <Popover open={customOpen} onOpenChange={setCustomOpen}>
+              <PopoverTrigger asChild><Button type="button" variant="ghost" size="sm">Custom</Button></PopoverTrigger>
+              <PopoverContent align="end" className="w-64">
+                <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); startCustomRest(); }}>
+                  <Label htmlFor="custom-rest">Rest duration (seconds)</Label>
+                  <Input id="custom-rest" type="number" inputMode="numeric" min="1" required value={customRest} onChange={(e) => setCustomRest(e.target.value)} />
+                  <Button type="submit" className="w-full">Start Rest</Button>
+                </form>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       )}

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { nextTheme, resolveTheme, THEME_COLORS, THEME_KEY } from "@/lib/theme";
+import { resolveTheme, THEME_COLORS, THEME_KEY } from "@/lib/theme";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
-// Resolved light/dark theme plus a toggle. The inline script in index.html
+// Resolved light/dark theme plus the stored preference ("system" when
+// nothing is stored) and a setter for the main menu's style switcher. The inline script in index.html
 // already applied the right class before first paint; this hook keeps the
 // class, the stored choice, and the theme-color metas in sync afterwards
 // (including live OS switches while no explicit choice is stored).
@@ -32,11 +33,17 @@ export function useTheme() {
     }
   }, [resolvedTheme, stored]);
 
-  const toggle = () => {
-    const next = nextTheme(resolvedTheme);
-    localStorage.setItem(THEME_KEY, next);
-    setStored(next);
+  const setTheme = (next) => {
+    if (next === "light" || next === "dark") {
+      localStorage.setItem(THEME_KEY, next);
+      setStored(next);
+    } else {
+      localStorage.removeItem(THEME_KEY);
+      setStored(null);
+    }
   };
 
-  return { resolvedTheme, toggle };
+  const theme = stored === "light" || stored === "dark" ? stored : "system";
+
+  return { resolvedTheme, theme, setTheme };
 }

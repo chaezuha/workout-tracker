@@ -68,7 +68,7 @@ export const HistoryCsvControls = ({ onImported }) => {
       if (!days.length) {
         toast.error(
           errors.length
-            ? `Nothing to import — line ${errors[0].line}: ${errors[0].message}`
+            ? `Nothing to import. Line ${errors[0].line}: ${errors[0].message}`
             : "Nothing to import in that file",
         );
         return;
@@ -107,7 +107,7 @@ export const HistoryCsvControls = ({ onImported }) => {
       onImported?.();
     } catch (err) {
       console.error("CSV import failed", err);
-      toast.error("Import failed partway — existing data was not touched");
+      toast.error("Import stopped partway. Existing data wasn't changed.");
     } finally {
       setBusy(false);
     }
@@ -119,7 +119,7 @@ export const HistoryCsvControls = ({ onImported }) => {
     parts.push(
       plan.toImport.length
         ? `${plural(plan.toImport.length, "new date")} will be imported.`
-        : "Every date in this file already has data — nothing to import.",
+        : "Every date in this file already has data, so there's nothing to import.",
     );
     if (plan.toImport.length && plan.skippedDates.length) {
       parts.push(
@@ -138,23 +138,25 @@ export const HistoryCsvControls = ({ onImported }) => {
     <>
       <Button
         type="button"
-        variant="outline"
-        size="sm"
-        onClick={exportCsv}
+        variant="ghost"
+        size="icon"
+        onClick={() => fileInputRef.current?.click()}
         disabled={busy}
-        title="Export full history as CSV (ignores the range filter)"
+        aria-label="Import history from CSV"
+        title="Import history from CSV"
       >
-        <Download /> Export
+        <Upload aria-hidden />
       </Button>
       <Button
         type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
+        variant="ghost"
+        size="icon"
+        onClick={exportCsv}
         disabled={busy}
-        title="Import workout history from CSV"
+        aria-label="Export history as CSV"
+        title="Export full history as CSV (ignores the range)"
       >
-        <Upload /> Import
+        <Download aria-hidden />
       </Button>
       <input
         ref={fileInputRef}
@@ -164,17 +166,17 @@ export const HistoryCsvControls = ({ onImported }) => {
         onChange={onFileChosen}
       />
       <Dialog open={plan !== null} onOpenChange={(open) => !open && setPlan(null)}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent variant="alert" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Import workout history?</DialogTitle>
+            <DialogTitle>Import Workout History?</DialogTitle>
             <DialogDescription>{describePlan()}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" size="lg" className="rounded-full">Cancel</Button>
             </DialogClose>
             {plan?.toImport.length > 0 && (
-              <Button onClick={runImport}>Import</Button>
+              <Button size="lg" className="rounded-full" onClick={runImport}>Import</Button>
             )}
           </DialogFooter>
         </DialogContent>

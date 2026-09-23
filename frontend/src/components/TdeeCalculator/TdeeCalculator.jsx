@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { EntryRow } from "@/components/ui/entry-row";
+import { ToggleGroup } from "@/components/ui/toggle-group";
 import { toKg, toCm, calculateBmr, ACTIVITY_LEVELS } from "@/lib/bodyMetrics";
 
 const units = [
-  { id: "metric", label: "Metric (kg, cm)" },
-  { id: "imperial", label: "Imperial (lb, ft/in)" },
+  { id: "metric", label: "Metric" },
+  { id: "imperial", label: "Imperial" },
 ];
 
 const genders = [
@@ -41,144 +42,115 @@ export const TdeeCalculator = () => {
 
   return (
     <>
-      <form onSubmit={calculate} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Units</Label>
-          <div className="flex gap-2">
-            {units.map(({ id, label }) => (
-              <Button
-                key={id}
-                type="button"
-                size="sm"
-                variant={unit === id ? "default" : "outline"}
-                onClick={() => setUnit(id)}
-              >
-                {label}
-              </Button>
-            ))}
+      <form onSubmit={calculate} className="space-y-8">
+        <section className="pref-group" aria-labelledby="tdee-about">
+          <div className="group-header">
+            <h2 id="tdee-about" className="group-title">About You</h2>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Gender</Label>
-          <div className="flex gap-2">
-            {genders.map(({ id, label }) => (
-              <Button
-                key={id}
-                type="button"
-                size="sm"
-                variant={gender === id ? "default" : "outline"}
-                onClick={() => setGender(id)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tdee-age">Age</Label>
-          <Input
-            id="tdee-age"
-            type="number"
-            inputMode="numeric"
-            min="1"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tdee-weight">
-            Weight ({unit === "metric" ? "kg" : "lb"})
-          </Label>
-          <Input
-            id="tdee-weight"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="any"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            required
-          />
-        </div>
-        {unit === "metric" ? (
-          <div className="space-y-2">
-            <Label htmlFor="tdee-height-cm">Height (cm)</Label>
-            <Input
-              id="tdee-height-cm"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="any"
-              value={heightCm}
-              onChange={(e) => setHeightCm(e.target.value)}
-              required
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="tdee-height-ft">Height (ft)</Label>
+          <div className="boxed-list">
+            <div className="row flex-wrap">
+              <span className="row-body">Units</span>
+              <ToggleGroup label="Units" options={units} value={unit} onValueChange={setUnit} />
+            </div>
+            <div className="row flex-wrap">
+              <span className="row-body">Sex</span>
+              <ToggleGroup label="Sex" options={genders} value={gender} onValueChange={setGender} />
+            </div>
+            <EntryRow inline label="Age" htmlFor="tdee-age" unit="yr">
               <Input
-                id="tdee-height-ft"
+                id="tdee-age"
                 type="number"
                 inputMode="numeric"
-                min="0"
-                value={heightFt}
-                onChange={(e) => setHeightFt(e.target.value)}
+                min="1"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tdee-height-in">Height (in)</Label>
+            </EntryRow>
+            <EntryRow inline label="Weight" htmlFor="tdee-weight" unit={unit === "metric" ? "kg" : "lb"}>
               <Input
-                id="tdee-height-in"
+                id="tdee-weight"
                 type="number"
                 inputMode="decimal"
                 min="0"
-                max="11"
                 step="any"
-                value={heightIn}
-                onChange={(e) => setHeightIn(e.target.value)}
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
                 required
               />
-            </div>
+            </EntryRow>
+            {unit === "metric" ? (
+              <EntryRow inline label="Height" htmlFor="tdee-height-cm" unit="cm">
+                <Input
+                  id="tdee-height-cm"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value)}
+                  required
+                />
+              </EntryRow>
+            ) : (
+              <EntryRow inline label="Height" htmlFor="tdee-height-ft" unit="in">
+                <Input
+                  id="tdee-height-ft"
+                  aria-label="Height, feet"
+                  style={{ width: "3.75rem" }}
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  value={heightFt}
+                  onChange={(e) => setHeightFt(e.target.value)}
+                  required
+                />
+                <span className="text-sm text-muted-foreground">ft</span>
+                <Input
+                  aria-label="Height, inches"
+                  style={{ width: "3.75rem" }}
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="11"
+                  step="any"
+                  value={heightIn}
+                  onChange={(e) => setHeightIn(e.target.value)}
+                  required
+                />
+              </EntryRow>
+            )}
           </div>
-        )}
-        <Button type="submit">Calculate TDEE</Button>
+        </section>
+        <div className="flex justify-center">
+          <Button type="submit" size="pill">Calculate</Button>
+        </div>
       </form>
-      <div className="rounded-xl border bg-muted/50 p-4">
-        {bmr === null ? (
-          <p className="text-sm text-muted-foreground">
-            Fill in your details to see your BMR and daily calories.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <p className="text-3xl font-semibold tabular-nums">
-                {Math.round(bmr)} kcal
-              </p>
-              <p className="text-sm text-muted-foreground">
-                BMR — calories burned at rest
-              </p>
-            </div>
-            <div className="space-y-1">
-              {ACTIVITY_LEVELS.map(({ id, label, multiplier }) => (
-                <div key={id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span className="tabular-nums">
-                    {Math.round(bmr * multiplier)} kcal
-                  </span>
-                </div>
-              ))}
-            </div>
+      {bmr !== null && (
+        <section className="pref-group" aria-labelledby="tdee-result">
+          <div className="group-header">
+            <h2 id="tdee-result" className="group-title">Daily Calories</h2>
           </div>
-        )}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Estimated with the Mifflin-St Jeor formula — a good rule of thumb, but
-        it won't be 100% accurate for everyone.
-      </p>
+          <div className="boxed-list">
+            <div className="row py-3">
+              <div className="row-body">
+                <span className="title-1 numeric">{Math.round(bmr)} kcal</span>
+                <span className="row-subtitle">BMR, burned at rest</span>
+              </div>
+            </div>
+            {ACTIVITY_LEVELS.map(({ id, label, multiplier }) => (
+              <div key={id} className="row">
+                <span className="row-body">{label}</span>
+                <span className="font-bold numeric">{Math.round(bmr * multiplier)} kcal</span>
+              </div>
+            ))}
+          </div>
+          <p className="group-description px-0.5">
+            Estimated with the Mifflin-St Jeor formula. A good rule of thumb, but
+            not exact for everyone.
+          </p>
+        </section>
+      )}
     </>
   );
 };

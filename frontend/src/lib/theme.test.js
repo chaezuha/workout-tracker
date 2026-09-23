@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextTheme, resolveTheme } from "@/lib/theme";
+import { resolveTheme } from "@/lib/theme";
 
 describe("resolveTheme", () => {
   it("honors an explicit stored choice regardless of the system", () => {
@@ -16,12 +16,5 @@ describe("resolveTheme", () => {
     expect(resolveTheme("system", true)).toBe("dark");
     expect(resolveTheme("", false)).toBe("light");
     expect(resolveTheme(undefined, true)).toBe("dark");
-  });
-});
-
-describe("nextTheme", () => {
-  it("flips between light and dark", () => {
-    expect(nextTheme("dark")).toBe("light");
-    expect(nextTheme("light")).toBe("dark");
   });
 });

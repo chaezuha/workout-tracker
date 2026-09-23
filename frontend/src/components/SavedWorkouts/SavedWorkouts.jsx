@@ -1,5 +1,6 @@
+import { LibraryBig, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { OverflowMenu } from "@/components/ui/overflow-menu";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -88,85 +89,69 @@ export const SavedWorkouts = ({ dayExercises, onLoadTemplate }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          Workouts
+        <Button type="button" variant="ghost" aria-label="Saved workouts" className="max-sm:w-11 max-sm:px-0">
+          <LibraryBig aria-hidden />
+          <span className="hidden sm:inline">Workouts</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md">
         {view === "list" ? (
           <>
             <DialogHeader>
               <DialogTitle>Saved Workouts</DialogTitle>
               <DialogDescription>
-                Load a workout into the selected day, or save a new one
+                Load one into the selected day, or save a new one.
               </DialogDescription>
             </DialogHeader>
             {error && <p className="text-destructive text-sm">{error}</p>}
             {templates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No saved workouts yet.
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No saved workouts yet
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="boxed-list">
                 {templates.map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between gap-2 rounded-md border p-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{t.name}</span>
-                        {t.isSample && <Badge variant="secondary">Sample</Badge>}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
+                  <li key={t.id} className="row">
+                    <div className="row-body">
+                      <span className="row-title">{t.name}</span>
+                      <span className="row-subtitle">
                         {t.exercises.length}{" "}
                         {t.exercises.length === 1 ? "exercise" : "exercises"}
-                      </div>
+                        {t.isSample && " · Sample"}
+                      </span>
                     </div>
-                    <div className="flex gap-2">
-                      <Button type="button" size="sm" onClick={() => handleLoad(t)}>
+                    <div className="row-suffix">
+                      <Button type="button" size="sm" variant="outline" onClick={() => handleLoad(t)}>
                         Load
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditor(t)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(t)}
-                      >
-                        Delete
-                      </Button>
+                      <OverflowMenu label={`Actions for ${t.name}`} actions={[
+                        { label: "Edit Workout", icon: Pencil, onSelect: () => openEditor(t) },
+                        { label: "Delete Workout", icon: Trash2, destructive: true, onSelect: () => handleDelete(t) },
+                      ]} />
                     </div>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="flex flex-col gap-2 pt-2">
-              <div className="flex gap-2">
-                <Button type="button" onClick={() => openEditor(null)}>
-                  New workout
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={dayExercises.length === 0}
-                  onClick={() => openEditor(null, saveTodaySnapshot())}
-                >
-                  Save today as workout
-                </Button>
-              </div>
-              {dayExercises.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Add exercises to the selected day to save it as a workout.
-                </p>
-              )}
+            <div className="boxed-list">
+              <button type="button" className="row row-activatable" onClick={() => openEditor(null)}>
+                <Plus className="size-4" aria-hidden />
+                <span className="row-body">New Workout</span>
+              </button>
+              <button
+                type="button"
+                className="row row-activatable disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent"
+                disabled={dayExercises.length === 0}
+                onClick={() => openEditor(null, saveTodaySnapshot())}
+              >
+                <Save className="size-4" aria-hidden />
+                <span className="row-body">
+                  <span className="row-title">Save Day as Workout</span>
+                  {dayExercises.length === 0 && (
+                    <span className="row-subtitle">Add exercises to this day first</span>
+                  )}
+                </span>
+              </button>
             </div>
           </>
         ) : (

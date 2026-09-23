@@ -4,14 +4,15 @@ import { TdeeCalculator } from "@/components/TdeeCalculator/TdeeCalculator";
 import { BmiCalculator } from "@/components/BmiCalculator/BmiCalculator";
 import { calculatePlateBreakdown } from "@/lib/plates";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { EntryRow } from "@/components/ui/entry-row";
+import { ToggleGroup } from "@/components/ui/toggle-group";
 
 const weights = [45, 35, 25, 10, 5, 2.5, 1, 0.5];
 
 const modes = [
-  { id: "plateToWeight", label: "Plates to weight" },
-  { id: "weightToPlate", label: "Weight to plates" },
+  { id: "plateToWeight", label: "Bar Total" },
+  { id: "weightToPlate", label: "Load Bar" },
   { id: "tdee", label: "TDEE" },
   { id: "bmi", label: "BMI" },
 ];
@@ -60,49 +61,44 @@ export const CalculatorsPage = () => {
   };
 
   const showCalculatedPlates = () => {
-    if (!plateCalcSummary) {
+    if (!plateCalcSummary) return null;
+    if (plateCalcSummary.error) {
       return (
-        <p className="text-sm text-muted-foreground">
-          Enter a target weight to see the plate breakdown.
-        </p>
-      );
-    }
-    if (plateCalcSummary.error === "barbell") {
-      return (
-        <p className="text-destructive text-sm">
-          The barbell alone is heavier than the desired weight.
-        </p>
-      );
-    }
-    if (plateCalcSummary.error === "noPlates") {
-      return (
-        <p className="text-destructive text-sm">
-          Select some plates to load the bar.
+        <p className="text-center text-sm text-destructive">
+          {plateCalcSummary.error === "barbell"
+            ? "The barbell alone is heavier than that."
+            : "Choose at least one plate size."}
         </p>
       );
     }
     return (
-      <div className="space-y-2">
-        <p className="text-3xl font-semibold tabular-nums">
-          {plateCalcSummary.total} lb
-        </p>
-        {!plateCalcSummary.exact && (
-          <p className="text-sm text-amber-600">
-            Rounded {plateCalcSummary.mode} to {plateCalcSummary.total} lb —{" "}
-            {plateCalcSummary.desired} lb isn't possible with these plates.
-          </p>
-        )}
-        <div className="space-y-1">
+      <section className="pref-group" aria-labelledby="plates-result">
+        <div className="group-header">
+          <h2 id="plates-result" className="group-title">Load the Bar</h2>
+        </div>
+        <div className="boxed-list">
+          <div className="row py-3">
+            <div className="row-body">
+              <span className="title-1 numeric">{plateCalcSummary.total} lb</span>
+              {!plateCalcSummary.exact && (
+                <span className="row-subtitle text-warning">
+                  Rounded {plateCalcSummary.mode}. {plateCalcSummary.desired} lb
+                  isn&apos;t possible with these plates.
+                </span>
+              )}
+            </div>
+          </div>
           {calculatedPlates.map(
             (count, i) =>
               count !== 0 && (
-                <p key={i} className="text-sm text-muted-foreground">
-                  {count} × {weights[i]} lb
-                </p>
+                <div key={i} className="row">
+                  <span className="row-body">{weights[i]} lb</span>
+                  <span className="font-bold numeric">× {count}</span>
+                </div>
               ),
           )}
         </div>
-      </div>
+      </section>
     );
   };
 
@@ -151,141 +147,149 @@ export const CalculatorsPage = () => {
   };
 
   const showCalculatedWeight = () => {
-    if (calculatedWeight === 0) {
-      return (
-        <p className="text-sm text-muted-foreground">
-          Enter plate counts to see the total weight.
-        </p>
-      );
-    }
+    if (calculatedWeight === 0) return null;
     return (
-      <p className="text-3xl font-semibold tabular-nums">
-        {calculatedWeight} lb
-      </p>
+      <div className="boxed-list">
+        <div className="row py-3">
+          <div className="row-body">
+            <span className="row-subtitle">Total on the bar</span>
+            <span className="title-1 numeric">{calculatedWeight} lb</span>
+          </div>
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-6 py-8">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Calculators</h1>
-        <p className="text-sm text-muted-foreground">
-          Work out what's on the bar — or what should be.
-        </p>
-      </div>
-      <div className="inline-flex flex-wrap gap-1 rounded-lg bg-muted p-1">
-        {modes.map(({ id, label }) => (
-          <Button
-            key={id}
-            type="button"
-            size="sm"
-            variant={calcMode === id ? "default" : "ghost"}
-            onClick={() => setCalcMode(id)}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
+    <div className="page-content">
+      <h1 className="sr-only">Calculators</h1>
+      <ToggleGroup
+        label="Calculator"
+        options={modes}
+        value={calcMode}
+        onValueChange={setCalcMode}
+        className="flex w-full"
+        itemClassName="px-1.5 sm:px-3"
+      />
       {calcMode === "tdee" ? (
         <TdeeCalculator />
       ) : calcMode === "bmi" ? (
         <BmiCalculator />
       ) : calcMode === "plateToWeight" ? (
         <>
-          <form onSubmit={calculateWeight} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="plate-barbell-weight">Barbell weight</Label>
-              <Input
-                id="plate-barbell-weight"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                value={plateBarbellWeight}
-                onChange={handlePlateBarbellWeightChange}
-              />
+          <form onSubmit={calculateWeight} className="space-y-8">
+            <section className="pref-group" aria-labelledby="total-bar">
+              <div className="group-header">
+                <h2 id="total-bar" className="group-title">Bar and Plates</h2>
+              </div>
+              <div className="boxed-list">
+                <EntryRow inline label="Barbell" htmlFor="plate-barbell-weight" unit="lb">
+                  <Input
+                    id="plate-barbell-weight"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    value={plateBarbellWeight}
+                    onChange={handlePlateBarbellWeightChange}
+                  />
+                </EntryRow>
+                <PlateSelector
+                  weights={weights}
+                  selected={selectedPlates}
+                  onToggle={togglePlate}
+                />
+              </div>
+            </section>
+            {selectedPlates.length > 0 && (
+              <section className="pref-group" aria-labelledby="total-counts">
+                <div className="group-header">
+                  <div>
+                    <h2 id="total-counts" className="group-title">Plates on the Bar</h2>
+                    <p className="group-description">Count every plate, both sides.</p>
+                  </div>
+                </div>
+                <div className="boxed-list">
+                  {weights.map(
+                    (w, i) =>
+                      selectedPlates.includes(w) && (
+                        <EntryRow key={w} inline label={`${w} lb`} htmlFor={`plate-${w}`} unit="×">
+                          <Input
+                            id={`plate-${w}`}
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            placeholder="0"
+                            value={plateCounts[i]}
+                            onChange={handlePlateCountChange(i)}
+                          />
+                        </EntryRow>
+                      ),
+                  )}
+                </div>
+              </section>
+            )}
+            <div className="flex justify-center">
+              <Button type="submit" size="pill">Calculate Total</Button>
             </div>
-            <PlateSelector
-              weights={weights}
-              selected={selectedPlates}
-              onToggle={togglePlate}
-            />
-            <div className="grid grid-cols-3 gap-3">
-              {weights.map(
-                (w, i) =>
-                  selectedPlates.includes(w) && (
-                    <div key={w} className="space-y-2">
-                      <Label htmlFor={`plate-${w}`}>{w} lb</Label>
-                      <Input
-                        id={`plate-${w}`}
-                        type="number"
-                        inputMode="numeric"
-                        min="0"
-                        value={plateCounts[i]}
-                        onChange={handlePlateCountChange(i)}
-                      />
-                    </div>
-                  ),
-              )}
-            </div>
-            <Button type="submit">Calculate total</Button>
           </form>
-          <div className="rounded-xl border bg-muted/50 p-4">
-            {showCalculatedWeight()}
-          </div>
+          {showCalculatedWeight()}
         </>
       ) : (
         <>
-          <form onSubmit={calculatePlates} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="desired-weight">Desired weight</Label>
-              <Input
-                id="desired-weight"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                value={desiredWeight}
-                onChange={handleDesiredWeightChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="barbell-weight">Barbell weight</Label>
-              <Input
-                id="barbell-weight"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                value={barbellWeight}
-                onChange={handleBarbellWeightChange}
-                required
-              />
-            </div>
-            <PlateSelector
-              weights={weights}
-              selected={selectedPlates}
-              onToggle={togglePlate}
-            />
-            <div className="space-y-2">
-              <Label>If the target can't be hit exactly</Label>
-              <div className="flex gap-2">
-                {["up", "down"].map((m) => (
-                  <Button
-                    key={m}
-                    type="button"
-                    size="sm"
-                    variant={roundMode === m ? "default" : "outline"}
-                    onClick={() => setRoundMode(m)}
-                  >
-                    Round {m}
-                  </Button>
-                ))}
+          <form onSubmit={calculatePlates} className="space-y-8">
+            <section className="pref-group" aria-labelledby="load-target">
+              <div className="group-header">
+                <h2 id="load-target" className="group-title">Target</h2>
               </div>
+              <div className="boxed-list">
+                <EntryRow inline label="Desired weight" htmlFor="desired-weight" unit="lb">
+                  <Input
+                    id="desired-weight"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    value={desiredWeight}
+                    onChange={handleDesiredWeightChange}
+                    required
+                  />
+                </EntryRow>
+                <EntryRow inline label="Barbell" htmlFor="barbell-weight" unit="lb">
+                  <Input
+                    id="barbell-weight"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    value={barbellWeight}
+                    onChange={handleBarbellWeightChange}
+                    required
+                  />
+                </EntryRow>
+                <PlateSelector
+                  weights={weights}
+                  selected={selectedPlates}
+                  onToggle={togglePlate}
+                />
+                <div className="row flex-wrap">
+                  <span className="row-body">
+                    <span className="row-title">If it can&apos;t be exact</span>
+                  </span>
+                  <ToggleGroup
+                    label="Rounding"
+                    options={[
+                      { id: "up", label: "Round Up" },
+                      { id: "down", label: "Round Down" },
+                    ]}
+                    value={roundMode}
+                    onValueChange={setRoundMode}
+                  />
+                </div>
+              </div>
+            </section>
+            <div className="flex justify-center">
+              <Button type="submit" size="pill">Calculate Plates</Button>
             </div>
-            <Button type="submit">Calculate plates</Button>
           </form>
-          <div className="rounded-xl border bg-muted/50 p-4">
-            {showCalculatedPlates()}
-          </div>
+          {showCalculatedPlates()}
         </>
       )}
     </div>

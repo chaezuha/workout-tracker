@@ -36,17 +36,27 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/30 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props} />
   );
 }
 
+// AdwDialog: a bottom sheet on phones, a floating dialog from sm up.
+// variant="alert" (AdwAlertDialog) floats centered at every size.
+const contentVariants = {
+  sheet:
+    "inset-x-0 bottom-0 max-h-[calc(100dvh-1.5rem)] w-full rounded-t-2xl px-5 pt-7 pb-[calc(1.25rem+env(safe-area-inset-bottom))] duration-300 ease-out data-open:slide-in-from-bottom data-closed:slide-out-to-bottom data-closed:duration-200 sm:inset-x-auto sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-h-[calc(100dvh-4rem)] sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:p-5 sm:duration-200 sm:data-open:[--tw-enter-translate-y:0.5rem] sm:data-closed:[--tw-exit-translate-y:0.5rem] sm:data-open:zoom-in-[0.97] sm:data-closed:zoom-out-[0.97]",
+  alert:
+    "top-1/2 left-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl p-6 duration-200 data-open:zoom-in-95 data-closed:zoom-out-95",
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  variant = "sheet",
   ...props
 }) {
   return (
@@ -54,15 +64,20 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        data-variant={variant}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "group/dialog fixed z-50 grid grid-cols-[minmax(0,1fr)] [&>*]:min-w-0 gap-4 overflow-y-auto overscroll-contain bg-dialog text-popover-foreground shadow-[var(--dialog-shadow)] outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          contentVariants[variant],
           className
         )}
         {...props}>
+        {variant === "sheet" && (
+          <div aria-hidden className="absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-fill-active sm:hidden" />
+        )}
         {children}
-        {showCloseButton && (
+        {showCloseButton && variant === "sheet" && (
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
+            <Button variant="ghost" shape="circular" className="absolute top-3.5 right-3 sm:top-3" size="icon-sm">
               <XIcon />
               <span className="sr-only">Close</span>
             </Button>
@@ -73,6 +88,7 @@ function DialogContent({
   );
 }
 
+// Centered like an AdwHeaderBar title, with the description as its subtitle.
 function DialogHeader({
   className,
   ...props
@@ -80,7 +96,7 @@ function DialogHeader({
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn("flex flex-col items-center gap-1 px-8 text-center group-data-[variant=alert]/dialog:gap-2.5 group-data-[variant=alert]/dialog:px-0", className)}
       {...props} />
   );
 }
@@ -95,7 +111,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end group-data-[variant=alert]/dialog:grid group-data-[variant=alert]/dialog:auto-cols-fr group-data-[variant=alert]/dialog:grid-flow-col group-data-[variant=alert]/dialog:gap-3 group-data-[variant=alert]/dialog:pt-2 group-data-[variant=alert]/dialog:*:h-11 group-data-[variant=alert]/dialog:*:rounded-full",
         className
       )}
       {...props}>
@@ -116,7 +132,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("font-heading text-base leading-none font-medium", className)}
+      className={cn("break-words font-heading text-[1.0625rem] leading-snug font-bold group-data-[variant=alert]/dialog:text-[1.375rem] group-data-[variant=alert]/dialog:font-extrabold", className)}
       {...props} />
   );
 }
@@ -129,7 +145,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-sm text-muted-foreground group-data-[variant=alert]/dialog:text-[0.9375rem] group-data-[variant=alert]/dialog:text-popover-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className
       )}
       {...props} />

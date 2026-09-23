@@ -1,16 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 
+// The plates you own, as a wrap of toggle buttons inside a boxed-list row.
 export const PlateSelector = ({ weights, selected, onToggle }) => (
-  <div className="space-y-2">
-    <Label>Plates</Label>
-    <div className="flex flex-wrap gap-2">
+  <div className="row flex-wrap gap-y-2 py-3">
+    <span className="row-body min-w-24">
+      <span className="row-title">Available plates</span>
+      <span className="row-subtitle">lb</span>
+    </span>
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Available plates">
       {weights.map((w) => (
         <Button
           key={w}
           type="button"
           size="sm"
-          variant={selected.includes(w) ? "default" : "outline"}
+          variant="toggle"
+          className="min-w-11 numeric"
+          aria-pressed={selected.includes(w)}
           onClick={() => onToggle(w)}
         >
           {w}

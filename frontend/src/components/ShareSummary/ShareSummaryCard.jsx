@@ -7,19 +7,19 @@ import { formatDurationCompact } from "@/lib/time";
 export const ShareSummaryCard = ({ summary, ref }) => (
   <div
     ref={ref}
-    className="w-[600px] rounded-2xl border bg-card p-8 text-card-foreground"
+    className="w-[600px] rounded-2xl bg-card p-8 text-card-foreground"
     style={{
       fontFamily:
         "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
     }}
   >
     <div className="flex items-baseline justify-between">
-      <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      <span className="text-sm font-bold text-muted-foreground">
         Workout Tracker
       </span>
       <span className="text-sm text-muted-foreground">{summary.dateLabel}</span>
     </div>
-    <h2 className="mt-2 text-2xl font-bold">{summary.name}</h2>
+    <h2 className="mt-2 text-2xl font-extrabold">{summary.name}</h2>
     {summary.durationSeconds > 0 && (
       <div className="mt-1 text-sm text-muted-foreground">
         {formatDurationCompact(summary.durationSeconds)}
@@ -29,12 +29,12 @@ export const ShareSummaryCard = ({ summary, ref }) => (
       {summary.exercises.map((ex) => (
         <div
           key={ex.name}
-          className="flex items-center justify-between gap-4 border-b pb-3 last:border-b-0 last:pb-0"
+          className="flex items-center justify-between gap-4 border-b border-separator pb-3 last:border-b-0 last:pb-0"
         >
           <span className="flex min-w-0 items-center gap-2 font-medium">
             <span className="truncate">{ex.name}</span>
             {ex.isPr && (
-              <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+              <span className="rounded-full bg-[#e5a50a]/20 px-2 py-0.5 text-xs font-bold text-warning">
                 PR
               </span>
             )}
@@ -46,7 +46,7 @@ export const ShareSummaryCard = ({ summary, ref }) => (
         </div>
       ))}
     </div>
-    <div className="mt-6 flex items-center justify-between border-t pt-4">
+    <div className="mt-6 flex items-center justify-between border-t border-separator pt-4">
       <span className="text-sm text-muted-foreground">Total volume</span>
       <span className="text-lg font-bold">
         {summary.totalVolume.toLocaleString("en-US")} lb

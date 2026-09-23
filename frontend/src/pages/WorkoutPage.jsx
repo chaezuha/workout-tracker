@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { arrayMove } from "@dnd-kit/sortable";
+import { Dumbbell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HeaderActions } from "@/components/HeaderBar/HeaderSlot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveStatus } from "@/components/SaveStatus/SaveStatus";
 import { SessionCard } from "@/components/SessionCard/SessionCard";
@@ -114,7 +116,7 @@ export const WorkoutPage = () => {
           ? `${pr.value} lb (was ${pr.previous})`
           : `est. 1RM ${Math.round(pr.value)} lb (was ${Math.round(pr.previous)})`,
       );
-      toast.success(`New ${exercise.name} PR — ${parts.join(", ")}`);
+      toast.success(`New ${exercise.name} PR: ${parts.join(", ")}`);
       setCelebratingId(exercise.id);
       clearTimeout(celebrateTimeoutRef.current);
       celebrateTimeoutRef.current = setTimeout(
@@ -291,43 +293,52 @@ export const WorkoutPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-6 py-8">
-      <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
+    <div className="page-content">
+      {dayLoaded && (
+        <HeaderActions>
+          <SavedWorkouts
+            dayExercises={sessions.flatMap((s) => s.exercises)}
+            onLoadTemplate={loadTemplateIntoDay}
+          />
+        </HeaderActions>
+      )}
+      <DateNav
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        subtitle={
+          <SaveStatus
+            saving={saving}
+            pending={pending}
+            online={online}
+            isGuest={isGuest}
+          />
+        }
+      />
       <RestTimer />
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-baseline gap-3">
-            <h2 className="text-lg font-medium">Sessions</h2>
-            <SaveStatus
-              saving={saving}
-              pending={pending}
-              online={online}
-              isGuest={isGuest}
-            />
-          </div>
-          {dayLoaded && (
-            <SavedWorkouts
-              dayExercises={sessions.flatMap((s) => s.exercises)}
-              onLoadTemplate={loadTemplateIntoDay}
-            />
-          )}
-        </div>
+      <div className="flex flex-col gap-6">
         {timer.saveError && (
           <p className="text-sm text-destructive">{timer.saveError}</p>
         )}
         {!dayLoaded ? (
           // Placeholder session cards; the real list stays hidden (and thus
           // non-interactive) until the selected day's data is in.
-          <div className="space-y-4" aria-hidden>
+          <div className="space-y-8" aria-hidden>
             {[0, 1].map((i) => (
-              <div key={i} className="space-y-4 rounded-xl border p-4 shadow-xs">
-                <div className="flex items-center justify-between">
+              <div key={i} className="pref-group">
+                <div className="group-header items-center">
                   <Skeleton className="h-5 w-28" />
-                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-[30px] w-20" />
                 </div>
-                <Skeleton className="h-8 w-28" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
+                <div className="boxed-list">
+                  {[0, 1].map((j) => (
+                    <div key={j} className="row min-h-16">
+                      <div className="row-body gap-2">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -357,21 +368,23 @@ export const WorkoutPage = () => {
                 />
               ))}
             </AnimatePresence>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={addNewSession}
-            >
-              + Add session
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="pill"
+                onClick={addNewSession}
+              >
+                <Plus aria-hidden /> Add Session
+              </Button>
+            </div>
           </>
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              No exercises yet — adding one starts Session 1.
-            </p>
-            <AddExerciseDialog onAdd={addFirstExercise} />
+          <div className="status-page">
+            <Dumbbell className="status-page-icon" aria-hidden />
+            <h2 className="title-1">No Exercises</h2>
+            <p>Add an exercise to start a session, or load one of your saved workouts.</p>
+            <AddExerciseDialog trigger="pill" onAdd={addFirstExercise} />
           </div>
         )}
       </div>

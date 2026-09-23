@@ -22,14 +22,12 @@ const computeStreak = (keys) => {
   return streak;
 };
 
-const StatTile = ({ icon: Icon, value, label }) => (
-  <div className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-xs">
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
-      <Icon className="size-4 text-muted-foreground" />
-    </div>
-    <div className="space-y-1">
-      <p className="text-lg leading-none font-semibold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+const StatTile = ({ icon: Icon, value, label, tone }) => (
+  <div className="flex items-center gap-3 bg-card px-4 py-3.5">
+    <Icon className={`size-6 shrink-0 ${tone}`} aria-hidden />
+    <div>
+      <p className="title-2 numeric leading-tight">{value}</p>
+      <p className="caption dim">{label}</p>
     </div>
   </div>
 );
@@ -66,54 +64,41 @@ export const CheckinCalendar = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Daily check-in
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Check in once a day to build the habit.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <h1 className="sr-only">Daily Check-In</h1>
       {error && <p className="text-center text-sm text-destructive">{error}</p>}
-      <div className="mx-auto w-full max-w-sm space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <StatTile icon={Flame} value={streak} label="day streak" />
-          <StatTile
-            icon={CalendarCheck}
-            value={monthCount}
-            label="this month"
-          />
-        </div>
-        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
-          <Calendar
-            modifiers={{ checkedIn: checkinKeys.map(fromDateKey) }}
-            modifiersClassNames={{ checkedIn: "day-checked-in" }}
-            className="w-full p-4 sm:p-5 [--cell-radius:9999px] [--cell-size:--spacing(10)] [&_.rdp-day]:flex [&_.rdp-day]:items-center [&_.rdp-day]:justify-center [&_.rdp-day]:text-sm"
-            classNames={{
-              root: "w-full",
-              caption_label: "text-base font-semibold",
-              weekdays: "flex gap-1",
-              week: "mt-1.5 flex w-full gap-1",
-            }}
-          />
-          <div className="border-t bg-muted/30 p-4">
-            <Button
-              type="button"
-              className="w-full"
-              variant={checkedInToday ? "outline" : "default"}
-              onClick={handleCheckin}
-            >
-              {checkedInToday ? (
-                <>
-                  <Check /> Checked in today
-                </>
-              ) : (
-                "Check in for today"
-              )}
-            </Button>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-separator shadow-[var(--card-shadow)]">
+        <StatTile icon={Flame} tone="text-warning" value={streak} label="Day streak" />
+        <StatTile icon={CalendarCheck} tone="text-accent-text" value={monthCount} label="This month" />
+      </div>
+      <div className="overflow-hidden rounded-xl bg-card shadow-[var(--card-shadow)]">
+        <Calendar
+          modifiers={{ checkedIn: checkinKeys.map(fromDateKey) }}
+          modifiersClassNames={{ checkedIn: "day-checked-in" }}
+          className="w-full p-3 sm:p-5 [--cell-size:clamp(2rem,10vw,2.75rem)] [&_.rdp-day]:flex [&_.rdp-day]:items-center [&_.rdp-day]:justify-center [&_.rdp-day]:text-sm"
+          classNames={{
+            root: "w-full",
+            caption_label: "text-base font-bold",
+            weekdays: "flex gap-1",
+            week: "mt-1.5 flex w-full gap-1",
+          }}
+        />
+      </div>
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          size="pill"
+          variant={checkedInToday ? "outline" : "default"}
+          onClick={handleCheckin}
+        >
+          {checkedInToday ? (
+            <>
+              <Check aria-hidden /> Checked In Today
+            </>
+          ) : (
+            "Check In for Today"
+          )}
+        </Button>
       </div>
     </div>
   );

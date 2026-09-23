@@ -14,6 +14,7 @@ import { ReloadPrompt } from "./components/ReloadPrompt/ReloadPrompt";
 import { GuestBanner } from "./components/GuestBanner/GuestBanner";
 import { StorageWarningBanner } from "./components/StorageWarningBanner/StorageWarningBanner";
 import { GuestMigrationPrompt } from "./components/GuestMigrationPrompt/GuestMigrationPrompt";
+import { HeaderSlotProvider } from "./components/HeaderBar/HeaderSlot";
 import { useAuth } from "@/contexts/AuthContext";
 import { WorkoutTimerProvider } from "@/contexts/WorkoutTimerContext";
 import { AuthForm } from "@/components/Auth/AuthForm";
@@ -36,7 +37,7 @@ const StatsPage = lazy(() =>
 );
 
 const AppLayout = () => (
-  <>
+  <HeaderSlotProvider>
     {/* One sticky container: the timer bar stacks under the nav instead of
         fighting it for top-0 (nav height varies when links wrap). */}
     <div className="sticky top-0 z-10">
@@ -46,10 +47,12 @@ const AppLayout = () => (
     <GuestBanner />
     <StorageWarningBanner />
     <GuestMigrationPrompt />
-    <Suspense fallback={null}>
-      <Outlet />
-    </Suspense>
-  </>
+    <main className="pb-[calc(var(--mobile-nav-height)+1rem)]">
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
+    </main>
+  </HeaderSlotProvider>
 );
 
 // Also bounces freshly signed-in users home: the session update re-renders
@@ -92,9 +95,24 @@ const App = () => {
           </Routes>
         </WorkoutTimerProvider>
         <ReloadPrompt />
+        {/* AdwToast: a dark pill, whatever the app's style. */}
         <Toaster
           position="bottom-center"
-          mobileOffset={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+          mobileOffset={{ bottom: "calc(1rem + var(--mobile-nav-height))" }}
+          toastOptions={{
+            unstyled: true,
+            classNames: {
+              toast:
+                "flex w-full items-center gap-3 rounded-full bg-[#1e1e21]/95 py-2.5 pr-2.5 pl-5 text-sm font-medium text-white shadow-[0_2px_8px_2px_rgb(0_0_6/25%)] sm:w-fit sm:max-w-[min(32rem,calc(100vw-2rem))] mx-auto",
+              title: "leading-snug",
+              description: "text-xs text-white/70",
+              icon: "hidden",
+              actionButton:
+                "shrink-0 rounded-full px-3 py-1.5 text-sm font-bold text-[#81d0ff] hover:bg-white/10",
+              cancelButton:
+                "shrink-0 rounded-full px-3 py-1.5 text-sm font-bold hover:bg-white/10",
+            },
+          }}
         />
       </BrowserRouter>
     </MotionConfig>

@@ -8,10 +8,6 @@ export function resolveTheme(stored, systemPrefersDark) {
   return systemPrefersDark ? "dark" : "light";
 }
 
-export function nextTheme(resolved) {
-  return resolved === "dark" ? "light" : "dark";
-}
-
-// Hex equivalents of --background for the theme-color meta; older Safari
-// can't parse oklch() there.
-export const THEME_COLORS = { light: "#ffffff", dark: "#0a0a0a" };
+// Hex equivalents of --headerbar for the theme-color meta, so the browser
+// chrome continues the header bar.
+export const THEME_COLORS = { light: "#ffffff", dark: "#2e2e32" };

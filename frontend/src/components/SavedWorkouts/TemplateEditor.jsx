@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExerciseNameAutocomplete } from "@/components/ExerciseNameAutocomplete/ExerciseNameAutocomplete";
 import { getExerciseSuggestions } from "@/services/exercises";
 import {
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
+import { EntryRow } from "@/components/ui/entry-row";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const emptyRow = () => ({
   key: crypto.randomUUID(),
@@ -90,38 +89,39 @@ export const TemplateEditor = ({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="grid gap-5">
       <DialogHeader>
-        <DialogTitle>{initialName ? "Edit workout" : "New workout"}</DialogTitle>
-        <DialogDescription>
-          Name your workout and add its exercises
-        </DialogDescription>
+        <DialogTitle>{initialName ? "Edit Workout" : "New Workout"}</DialogTitle>
       </DialogHeader>
-      <FieldGroup>
-        <Field>
-          <Label htmlFor="template-name">Workout Name</Label>
+      <div className="boxed-list">
+        <EntryRow label="Workout name" htmlFor="template-name">
           <Input
+            autoFocus
             id="template-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
-        </Field>
-        {rows.map((row, i) => (
-          <div key={row.key} className="rounded-md border p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Exercise {i + 1}</span>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => removeRow(row.key)}
-              >
-                Remove
-              </Button>
-            </div>
-            <Field>
-              <Label htmlFor={`ex-name-${row.key}`}>Name</Label>
+        </EntryRow>
+      </div>
+      {rows.map((row, i) => (
+        <section key={row.key} className="pref-group" aria-label={`Exercise ${i + 1}`}>
+          <div className="group-header items-center">
+            <h3 className="group-title">Exercise {i + 1}</h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              shape="circular"
+              aria-label={`Remove exercise ${i + 1}`}
+              className="hover:text-destructive"
+              onClick={() => removeRow(row.key)}
+            >
+              <Trash2 aria-hidden />
+            </Button>
+          </div>
+          <div className="boxed-list">
+            <EntryRow label="Name" htmlFor={`ex-name-${row.key}`}>
               <ExerciseNameAutocomplete
                 id={`ex-name-${row.key}`}
                 value={row.name}
@@ -130,9 +130,8 @@ export const TemplateEditor = ({
                 onSelect={(s) => fillRowFromSuggestion(row.key, s)}
                 required
               />
-            </Field>
-            <Field>
-              <Label htmlFor={`ex-weight-${row.key}`}>Weight</Label>
+            </EntryRow>
+            <EntryRow inline label="Weight" unit="lb" htmlFor={`ex-weight-${row.key}`}>
               <Input
                 id={`ex-weight-${row.key}`}
                 type="number"
@@ -142,9 +141,8 @@ export const TemplateEditor = ({
                 value={row.weight}
                 onChange={(e) => updateRow(row.key, "weight", e.target.value)}
               />
-            </Field>
-            <Field>
-              <Label htmlFor={`ex-sets-${row.key}`}>Sets</Label>
+            </EntryRow>
+            <EntryRow inline label="Sets" htmlFor={`ex-sets-${row.key}`}>
               <Input
                 id={`ex-sets-${row.key}`}
                 type="number"
@@ -154,9 +152,8 @@ export const TemplateEditor = ({
                 onChange={(e) => updateRow(row.key, "sets", e.target.value)}
                 required
               />
-            </Field>
-            <Field>
-              <Label htmlFor={`ex-reps-${row.key}`}>Reps</Label>
+            </EntryRow>
+            <EntryRow inline label="Reps" htmlFor={`ex-reps-${row.key}`}>
               <Input
                 id={`ex-reps-${row.key}`}
                 type="number"
@@ -166,23 +163,24 @@ export const TemplateEditor = ({
                 onChange={(e) => updateRow(row.key, "reps", e.target.value)}
                 required
               />
-            </Field>
-            <Field>
-              <Label htmlFor={`ex-notes-${row.key}`}>Notes</Label>
+            </EntryRow>
+            <EntryRow label="Notes (optional)" htmlFor={`ex-notes-${row.key}`}>
               <Input
                 id={`ex-notes-${row.key}`}
                 value={row.notes}
                 onChange={(e) => updateRow(row.key, "notes", e.target.value)}
               />
-            </Field>
+            </EntryRow>
           </div>
-        ))}
-        <Button type="button" variant="outline" onClick={() => setRows(rows.concat(emptyRow()))}>
-          Add exercise
-        </Button>
-      </FieldGroup>
-      {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-      <DialogFooter className="mt-4">
+        </section>
+      ))}
+      <div className="boxed-list">
+        <button type="button" className="row row-activatable justify-center gap-2 font-bold text-accent-text" onClick={() => setRows(rows.concat(emptyRow()))}>
+          <Plus className="size-4" aria-hidden /> Add Exercise
+        </button>
+      </div>
+      {error && <p className="text-destructive text-sm">{error}</p>}
+      <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>

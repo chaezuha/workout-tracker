@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { EntryRow } from "@/components/ui/entry-row";
+import { ToggleGroup } from "@/components/ui/toggle-group";
 import { toKg, toCm, calculateBmi, bmiCategory } from "@/lib/bodyMetrics";
 
 const units = [
-  { id: "metric", label: "Metric (kg, cm)" },
-  { id: "imperial", label: "Imperial (lb, ft/in)" },
+  { id: "metric", label: "Metric" },
+  { id: "imperial", label: "Imperial" },
 ];
 
 const ranges = [
@@ -41,121 +43,104 @@ export const BmiCalculator = () => {
 
   return (
     <>
-      <form onSubmit={calculate} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Units</Label>
-          <div className="flex gap-2">
-            {units.map(({ id, label }) => (
-              <Button
-                key={id}
-                type="button"
-                size="sm"
-                variant={unit === id ? "default" : "outline"}
-                onClick={() => setUnit(id)}
-              >
-                {label}
-              </Button>
-            ))}
+      <form onSubmit={calculate} className="space-y-8">
+        <section className="pref-group" aria-labelledby="bmi-body">
+          <div className="group-header">
+            <h2 id="bmi-body" className="group-title">Height and Weight</h2>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bmi-weight">
-            Weight ({unit === "metric" ? "kg" : "lb"})
-          </Label>
-          <Input
-            id="bmi-weight"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="any"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            required
-          />
-        </div>
-        {unit === "metric" ? (
-          <div className="space-y-2">
-            <Label htmlFor="bmi-height-cm">Height (cm)</Label>
-            <Input
-              id="bmi-height-cm"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="any"
-              value={heightCm}
-              onChange={(e) => setHeightCm(e.target.value)}
-              required
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="bmi-height-ft">Height (ft)</Label>
-              <Input
-                id="bmi-height-ft"
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={heightFt}
-                onChange={(e) => setHeightFt(e.target.value)}
-                required
-              />
+          <div className="boxed-list">
+            <div className="row flex-wrap">
+              <span className="row-body">Units</span>
+              <ToggleGroup label="Units" options={units} value={unit} onValueChange={setUnit} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="bmi-height-in">Height (in)</Label>
+            <EntryRow inline label="Weight" htmlFor="bmi-weight" unit={unit === "metric" ? "kg" : "lb"}>
               <Input
-                id="bmi-height-in"
+                id="bmi-weight"
                 type="number"
                 inputMode="decimal"
                 min="0"
-                max="11"
                 step="any"
-                value={heightIn}
-                onChange={(e) => setHeightIn(e.target.value)}
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
                 required
               />
-            </div>
+            </EntryRow>
+            {unit === "metric" ? (
+              <EntryRow inline label="Height" htmlFor="bmi-height-cm" unit="cm">
+                <Input
+                  id="bmi-height-cm"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value)}
+                  required
+                />
+              </EntryRow>
+            ) : (
+              <EntryRow inline label="Height" htmlFor="bmi-height-ft" unit="in">
+                <Input
+                  id="bmi-height-ft"
+                  aria-label="Height, feet"
+                  style={{ width: "3.75rem" }}
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  value={heightFt}
+                  onChange={(e) => setHeightFt(e.target.value)}
+                  required
+                />
+                <span className="text-sm text-muted-foreground">ft</span>
+                <Input
+                  aria-label="Height, inches"
+                  style={{ width: "3.75rem" }}
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="11"
+                  step="any"
+                  value={heightIn}
+                  onChange={(e) => setHeightIn(e.target.value)}
+                  required
+                />
+              </EntryRow>
+            )}
           </div>
-        )}
-        <Button type="submit">Calculate BMI</Button>
+        </section>
+        <div className="flex justify-center">
+          <Button type="submit" size="pill">Calculate</Button>
+        </div>
       </form>
-      <div className="rounded-xl border bg-muted/50 p-4">
-        {bmi === null ? (
-          <p className="text-sm text-muted-foreground">
-            Enter your height and weight to see your BMI.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <p className="text-3xl font-semibold tabular-nums">
-                {bmi.toFixed(1)}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                BMI — {bmiCategory(bmi)}
-              </p>
-            </div>
-            <div className="space-y-1">
-              {ranges.map(({ label, range }) => (
-                <div
-                  key={label}
-                  className={`flex justify-between text-sm ${
-                    bmiCategory(bmi) === label
-                      ? "font-medium"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  <span>{label}</span>
-                  <span className="tabular-nums">{range}</span>
-                </div>
-              ))}
-            </div>
+      {bmi !== null && (
+        <section className="pref-group" aria-labelledby="bmi-result">
+          <div className="group-header">
+            <h2 id="bmi-result" className="group-title">Your BMI</h2>
           </div>
-        )}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        BMI is a good rule of thumb, but it doesn't account for muscle mass or
-        body composition — it won't be 100% accurate for everyone.
-      </p>
+          <div className="boxed-list">
+            <div className="row py-3">
+              <div className="row-body">
+                <span className="title-1 numeric">{bmi.toFixed(1)}</span>
+                <span className="row-subtitle">{bmiCategory(bmi)}</span>
+              </div>
+            </div>
+            {ranges.map(({ label, range }) => {
+              const current = bmiCategory(bmi) === label;
+              return (
+                <div key={label} className={`row ${current ? "font-bold" : ""}`}>
+                  <span className="row-body">{label}</span>
+                  <span className={`numeric ${current ? "" : "text-muted-foreground"}`}>{range}</span>
+                  {current && <Check className="size-4 text-accent-text" aria-label="Your range" />}
+                </div>
+              );
+            })}
+          </div>
+          <p className="group-description px-0.5">
+            BMI doesn&apos;t account for muscle mass or body composition, so treat
+            it as a rough guide.
+          </p>
+        </section>
+      )}
     </>
   );
 };
